@@ -1,0 +1,123 @@
+{
+  "name": "EBAY-OAUTH-REFRESH",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "minutes", "minutesInterval": 90 }
+          ]
+        }
+      },
+      "id": "cron-90min",
+      "name": "Every 90 min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT refresh_token FROM oauth_tokens WHERE provider = 'ebay' AND environment = 'production' LIMIT 1;",
+        "options": {}
+      },
+      "id": "fetch-refresh-token",
+      "name": "Fetch current refresh_token",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300],
+      "credentials": { "postgres": { "id": "EVENTHORIZON_CREDS", "name": "eventhorizon" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ebay.com/identity/v1/oauth2/token",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/x-www-form-urlencoded" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "grant_type", "value": "refresh_token" },
+            { "name": "refresh_token", "value": "={{ $json.refresh_token }}" },
+            { "name": "scope", "value": "https://api.ebay.com/oauth/api_scope/buy.browse https://api.ebay.com/oauth/api_scope" }
+          ]
+        },
+        "options": {
+          "response": { "response": { "fullResponse": false } }
+        }
+      },
+      "id": "refresh-call",
+      "name": "POST eBay /oauth2/token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "EBAY_BASIC_AUTH_CREDS", "name": "eBay client_id:client_secret (Basic)" }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE oauth_tokens SET access_token = $1, token_type = COALESCE($2, 'Bearer'), expires_at = NOW() + ($3::int * INTERVAL '1 second'), refreshed_at = NOW(), last_refresh_status = 'ok', last_refresh_error = NULL WHERE provider = 'ebay' AND environment = 'production' RETURNING token_id, expires_at;",
+        "options": {
+          "queryReplacement": "={{ $json.access_token }},={{ $json.token_type }},={{ $json.expires_in }}"
+        }
+      },
+      "id": "persist-token",
+      "name": "Update oauth_tokens",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [900, 300],
+      "credentials": { "postgres": { "id": "EVENTHORIZON_CREDS", "name": "eventhorizon" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO data_import_log (source_id, workflow_name, run_started_at, run_finished_at, status, rows_updated, response_summary) VALUES ('SRC-001', 'EBAY-OAUTH-REFRESH', NOW() - INTERVAL '2 seconds', NOW(), 'success', 1, jsonb_build_object('expires_at', $1::text));",
+        "options": {
+          "queryReplacement": "={{ $json.expires_at }}"
+        }
+      },
+      "id": "log-success",
+      "name": "Log success",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1120, 220],
+      "credentials": { "postgres": { "id": "EVENTHORIZON_CREDS", "name": "eventhorizon" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE oauth_tokens SET last_refresh_status = 'failed', last_refresh_error = $1 WHERE provider = 'ebay' AND environment = 'production'; INSERT INTO data_import_log (source_id, workflow_name, run_started_at, run_finished_at, status, rows_error, error_message) VALUES ('SRC-001', 'EBAY-OAUTH-REFRESH', NOW() - INTERVAL '2 seconds', NOW(), 'failed', 1, $1);",
+        "options": {
+          "queryReplacement": "={{ JSON.stringify($json) }}"
+        }
+      },
+      "id": "log-failure",
+      "name": "Log failure",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1120, 380],
+      "credentials": { "postgres": { "id": "EVENTHORIZON_CREDS", "name": "eventhorizon" } }
+    }
+  ],
+  "connections": {
+    "Every 90 min":              { "main": [[{ "node": "Fetch current refresh_token", "type": "main", "index": 0 }]] },
+    "Fetch current refresh_token": { "main": [[{ "node": "POST eBay /oauth2/token",     "type": "main", "index": 0 }]] },
+    "POST eBay /oauth2/token":   { "main": [[{ "node": "Update oauth_tokens",          "type": "main", "index": 0 }]] },
+    "Update oauth_tokens":       { "main": [[{ "node": "Log success",                  "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": ""
+  },
+  "active": false,
+  "_README": "Import via n8n UI > Workflows > Import. Wire two credentials before activating: (1) Postgres 'eventhorizon' on the hub server; (2) HTTP Header Auth 'eBay client_id:client_secret (Basic)' with header name 'Authorization' and value 'Basic <base64(client_id:client_secret)>'. Seed oauth_tokens with current refresh_token before first run: INSERT INTO oauth_tokens (provider, environment, access_token, refresh_token, expires_at) VALUES ('ebay','production','<current_access>','<current_refresh>', NOW() + INTERVAL '90 minutes'). EBAY-CARD-INGEST should be updated to SELECT access_token FROM oauth_tokens WHERE provider='ebay' on each tick."
+}
