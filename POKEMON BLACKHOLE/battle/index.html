@@ -120,7 +120,7 @@
   /* Rarity legend — sizes bumped ~30% per user */
   #rarity-legend {
     position: fixed;
-    top: 200px; right: 12px;
+    top: 410px; right: 12px;
     width: 260px;
     z-index: 1000;
     background: rgba(0,0,0,0.6);
@@ -149,6 +149,61 @@
   .rl-name { font-size: 8px; color: #d8d8f0; }
   .rl-pop  { font-size: 7px; color: #909090; }
   .rl-note { font-size: 7px; color: #909090; margin-top: 8px; padding-top: 5px; border-top: 1px solid #333; }
+
+  /* Trigger criteria info panel — top of right-side panel stack */
+  #trigger-panel {
+    position: fixed;
+    top: 200px; right: 12px;
+    width: 260px;
+    z-index: 1000;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid #2a3a5a;
+    border-radius: 4px;
+    padding: 10px;
+    color: #fff;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    line-height: 1.5;
+    letter-spacing: 0.5px;
+  }
+  .tp-title { color: #ff8848; margin-bottom: 8px; font-size: 9px; letter-spacing: 1px; }
+  .tp-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+  .tp-key { color: #909090; font-size: 7px; }
+  .tp-val { color: #fff; font-size: 7px; }
+
+  /* Confidence matrix legend (below rarity tiers) */
+  #confidence-legend {
+    position: fixed;
+    top: 600px; right: 12px;
+    width: 260px;
+    z-index: 1000;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid #2a3a5a;
+    border-radius: 4px;
+    padding: 10px;
+    color: #fff;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    line-height: 1.5;
+    letter-spacing: 0.5px;
+  }
+  .cl-title { color: #c8a820; margin-bottom: 8px; font-size: 9px; letter-spacing: 1px; }
+  .cl-row {
+    display: grid;
+    grid-template-columns: 14px 64px 1fr;
+    gap: 4px;
+    align-items: center;
+    margin-bottom: 3px;
+  }
+  .cl-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .cl-dot.uncharted { background: #909090; }
+  .cl-dot.thin      { background: #cc3030; }
+  .cl-dot.low       { background: #d06820; }
+  .cl-dot.average   { background: #c8a820; }
+  .cl-dot.high      { background: #48c848; }
+  .cl-dot.ideal     { background: #4480cc; }
+  .cl-name { font-size: 7px; color: #d8d8f0; }
+  .cl-desc { font-size: 6px; color: #909090; }
 
   /* ---------- Battle scene ---------- */
   #battle-scene {
@@ -375,6 +430,106 @@
     flex: 0 0 auto;
     vertical-align: middle;
   }
+  .tr-badge-px {
+    image-rendering: pixelated;
+    width: 14px; height: 14px;
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+  .player-trainer-line { display: inline-flex; align-items: center; }
+  .player-feedback { font-size: 7px; color: #707088; }
+  /* Mirror foe nameplate styling on player */
+  #player-stat-box .first-ed-stamp { width: 22px; height: 22px; }
+  #player-stat-box .name-row { align-items: center; }
+  #player-stat-box .grade-row { gap: 6px; font-size: 7px; }
+  #player-stat-box .grade-row .stat-level {
+    display: inline-block;
+    background: #1a1a26;
+    color: #ffffff;
+    padding: 2px 5px;
+    border-radius: 2px;
+    border: 1px solid #1a1a26;
+    font-size: 8px;
+    letter-spacing: 0.5px;
+  }
+  #player-stat-box .grade-row .stat-grader-label { font-size: 7px; flex: 1; min-width: 0; overflow: hidden; }
+  /* Inline editable price inputs in player HP numbers row */
+  .inline-price {
+    width: 44px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: #1a1a26;
+    background: #ffffff;
+    border: 1px solid #c8a820;
+    border-radius: 2px;
+    padding: 1px 2px;
+    text-align: right;
+    -moz-appearance: textfield;
+  }
+  .inline-price.pop-input { width: 40px; text-align: center; }
+  .inline-price::-webkit-outer-spin-button,
+  .inline-price::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  /* Editable contenteditable spans — look like normal text until hover/focus */
+  .editable {
+    cursor: text;
+    border-bottom: 1px dashed transparent;
+    outline: none;
+  }
+  .editable:hover { border-bottom-color: #c8a820; }
+  .editable:focus { border-bottom-color: #c8a820; background: rgba(200,168,32,0.08); }
+
+  /* Inline select dropdowns — style to blend with surrounding text */
+  .inline-select {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: #1a1a26;
+    background: #ffffff;
+    border: 1px solid #c8a820;
+    border-radius: 2px;
+    padding: 1px 4px;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .inline-select:hover { filter: brightness(1.05); }
+  .stat-level-select { font-size: 8px; min-width: 50px; }
+  .stat-grader-select { min-width: 44px; font-size: 7px; }
+  .stat-label-select  { font-size: 7px; min-width: 80px; flex: 1; }
+  .rarity-tier-select { font-size: 7px; min-width: 110px; }
+
+  /* EDIT vs DISPLAY mode — toggle via class on #player-stat-box */
+  #player-stat-box { position: relative; }
+  #player-stat-box .display-only { display: none; }
+  #player-stat-box.display-mode .edit-only { display: none !important; }
+  #player-stat-box.display-mode .display-only { display: inline; }
+  /* Display-mode visual = identical to foe stat box typography */
+  #player-stat-box.display-mode .stat-name { font-size: 9px; letter-spacing: 1px; }
+  #player-stat-box.display-mode .stat-level {
+    display: inline-block;
+    background: #1a1a26; color: #fff;
+    padding: 2px 5px; border-radius: 2px; border: 1px solid #1a1a26;
+    font-size: 8px; letter-spacing: 0.5px;
+  }
+  #player-stat-box.display-mode .stat-grader-label { font-size: 7px; }
+  /* Click anywhere on display-mode stat box to re-enter edit */
+  #player-stat-box.display-mode { cursor: pointer; }
+  #player-stat-box.display-mode:hover { box-shadow: 2px 2px 0 rgba(0,0,0,0.55), 0 0 0 2px rgba(200,168,32,0.5); }
+  /* CONFIRM button — sits below the stat box content in edit mode only */
+  #player-confirm-btn {
+    display: block;
+    margin: 8px auto 2px;
+    background: #c8a820;
+    color: #1a1a26;
+    border: 2px solid #1a1a26;
+    border-radius: 3px;
+    padding: 6px 14px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    cursor: pointer;
+    letter-spacing: 1px;
+  }
+  #player-confirm-btn:hover { filter: brightness(1.1); }
   .first-ed-stamp {
     image-rendering: pixelated;
     width: 22px; height: 22px;
@@ -513,12 +668,31 @@
   /* Stats strip — 6 cells horizontal */
   #stats-strip {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 3px;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
     margin-top: 10px;
+  }
+  .cost-section {
     background: rgba(0,0,0,0.25);
     padding: 6px;
     border-radius: 2px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .cost-section.buy-section  { border-color: rgba(104, 180, 255, 0.3); }
+  .cost-section.sell-section { border-color: rgba(104, 224, 104, 0.3); }
+  .cost-section-label {
+    font-size: 7px;
+    color: #c8a820;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    text-align: center;
+  }
+  .buy-section  .cost-section-label { color: #6cb4ff; }
+  .sell-section .cost-section-label { color: #68e068; }
+  .cost-cells {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 3px;
   }
   .stat-cell { text-align: center; font-size: 7px; }
   .stat-cell-label { color: #b8b8d0; margin-bottom: 3px; letter-spacing: 0.5px; }
@@ -927,6 +1101,18 @@
   <canvas class="grader-badge-px" id="badge-tag" width="36" height="14" title="TAG"></canvas>
 </div>
 
+<!-- Trigger-criteria info panel — what exactly fired the alert -->
+<div id="trigger-panel">
+  <div class="tp-title">TRIGGER CRITERIA</div>
+  <div class="tp-row"><span class="tp-key">Type</span><span class="tp-val" id="tp-type">recase_arbitrage</span></div>
+  <div class="tp-row"><span class="tp-key">Listed vs 90d Avg</span><span class="tp-val" id="tp-spread-pct">−53%</span></div>
+  <div class="tp-row"><span class="tp-key">Listed vs ATH</span><span class="tp-val" id="tp-ath-pct">−68%</span></div>
+  <div class="tp-row"><span class="tp-key">Pop @ Grade</span><span class="tp-val" id="tp-pop">23 (RARE)</span></div>
+  <div class="tp-row"><span class="tp-key">Days to Sell</span><span class="tp-val" id="tp-days">4d</span></div>
+  <div class="tp-row"><span class="tp-key">Set 6M</span><span class="tp-val" id="tp-set6m">+20%</span></div>
+  <div class="tp-row"><span class="tp-key">Card 6M</span><span class="tp-val" id="tp-card6m">+28%</span></div>
+</div>
+
 <!-- Rarity tier legend — symbol meanings + per-grader pop thresholds -->
 <div id="rarity-legend">
   <div class="rl-title">RARITY TIERS</div>
@@ -935,6 +1121,17 @@
   <div class="rl-row"><span class="rl-sym uncommon">&#9670;</span><span class="rl-name">UNCOMMON</span><span class="rl-pop">PSA 51-200 / CGC 21-75</span></div>
   <div class="rl-row"><span class="rl-sym common">&#9679;</span><span class="rl-name">COMMON</span><span class="rl-pop">PSA 200+ / CGC 75+</span></div>
   <div class="rl-note">CGC 10 Pristine: always &#9733;&#9733;</div>
+</div>
+
+<!-- Pricing confidence matrix — color codes for COMPS bar -->
+<div id="confidence-legend">
+  <div class="cl-title">PRICING CONFIDENCE</div>
+  <div class="cl-row"><span class="cl-dot uncharted"></span><span class="cl-name">UNCHARTED</span><span class="cl-desc">no data — anchor high</span></div>
+  <div class="cl-row"><span class="cl-dot thin"></span><span class="cl-name">THIN</span><span class="cl-desc">below min — unreliable</span></div>
+  <div class="cl-row"><span class="cl-dot low"></span><span class="cl-name">LOW</span><span class="cl-desc">at min — weak signal</span></div>
+  <div class="cl-row"><span class="cl-dot average"></span><span class="cl-name">AVERAGE</span><span class="cl-desc">standard confidence</span></div>
+  <div class="cl-row"><span class="cl-dot high"></span><span class="cl-name">HIGH</span><span class="cl-desc">at max — strong</span></div>
+  <div class="cl-row"><span class="cl-dot ideal"></span><span class="cl-name">IDEAL</span><span class="cl-desc">deep liquidity</span></div>
 </div>
 
 
@@ -996,42 +1193,86 @@
 
   <!-- Player stat box: bottom-LEFT, overlaps arena bottom edge per user spec -->
   <div id="player-stat-wrap">
-    <div id="player-stat-box" class="stat-box">
-      <div class="stat-row">
-        <span class="stat-name">TEAM ROCKET BHN</span>
-        <span class="stat-level">Lv99</span>
+    <div id="player-stat-box" class="stat-box edit-mode">
+      <!-- Row 1: name (input OR display) + 1st Ed stamp -->
+      <div class="stat-row name-row">
+        <span class="stat-name editable edit-only" id="player-pokemon-name" contenteditable="true" spellcheck="false">PERSIAN</span>
+        <span class="stat-name display-only" id="player-name-display">PERSIAN</span>
+        <canvas class="first-ed-stamp" id="player-first-ed" width="22" height="22"></canvas>
       </div>
+      <!-- Row 2: Lv + grader badge + grade label (edit selects ↔ display spans) -->
+      <div class="stat-row grade-row">
+        <select class="edit-only inline-select stat-level-select" id="player-level-sel">
+          <option>Lv10</option><option selected>Lv9.5</option><option>Lv9</option><option>Lv8</option><option>Lv7</option><option>Lv6</option>
+        </select>
+        <span class="display-only stat-level" id="player-level-display">Lv9.5</span>
+        <canvas class="grader-badge-px" id="player-grader-badge" width="36" height="14"></canvas>
+        <select class="edit-only inline-select stat-grader-select" id="player-grader-sel">
+          <option>PSA</option><option selected>CGC</option><option>BGS</option><option>SGC</option><option>TAG</option>
+        </select>
+        <select class="edit-only inline-select stat-label-select" id="player-label-sel">
+          <option>BLUE LABEL</option><option>GEM MINT</option><option>PRISTINE</option><option>GOLD LABEL</option><option>BLACK LABEL</option><option>MINT</option><option>MINT+</option><option>PERFECT</option>
+        </select>
+        <span class="display-only stat-grader-label" id="player-label-display">BLUE LABEL</span>
+      </div>
+      <!-- Trainer line — visible in both modes -->
       <div class="stat-row stat-sub-row">
-        <span>@fletchketchem</span>
+        <span class="player-trainer-line"><canvas class="tr-badge-px" id="player-tr-badge" width="14" height="14"></canvas> @fletchketchem</span>
+        <span class="player-feedback" id="player-feedback">33 feedback (94.7%)</span>
       </div>
-      <canvas id="player-pokeballs" class="pokeball-inline" width="104" height="14"></canvas>
+      <!-- HP bar — always visible -->
       <div class="hp-label">HP <span class="hp-line"></span></div>
       <div class="hp-bar-container"><div class="hp-bar-fill player-hp" id="player-hp-fill"></div></div>
-      <div class="hp-numbers">880 / 1000</div>
+      <!-- Price row: inputs in edit mode, display span in display mode -->
+      <div class="hp-numbers" id="player-hp-numbers">
+        <span class="edit-only">$<input type="number" id="player-listed" value="80" step="1" min="0" class="inline-price"> / $<input type="number" id="player-market" value="110" step="1" min="0" class="inline-price"></span>
+        <span class="display-only" id="player-prices-display">$80 / $110</span>
+      </div>
+      <!-- Rarity line: dropdown+input in edit mode, display span in display mode -->
+      <div class="stat-rarity" id="player-rarity">
+        <span class="edit-only">
+          <select class="inline-select rarity-tier-select" id="player-rarity-sel">
+            <option value="ultra">★★ ULTRA RARE</option>
+            <option value="rare" selected>★ RARE</option>
+            <option value="uncommon">◆ UNCOMMON</option>
+            <option value="common">● COMMON</option>
+          </select>
+          <span class="rarity-sep">—</span>
+          PSA POP <input type="number" id="player-pop" value="23" step="1" min="0" class="inline-price pop-input">
+        </span>
+        <span class="display-only" id="player-rarity-display"></span>
+      </div>
+      <canvas id="player-pokeballs" class="pokeball-inline" width="104" height="14"></canvas>
       <div class="exp-label">Exp (Comp) <span id="comps-readout" style="color:#909090;font-size:6px;float:right;">820 / 1000</span></div>
       <div class="exp-bar-container"><div class="exp-bar-fill" id="exp-fill"></div></div>
+      <!-- CONFIRM button — only visible in edit mode -->
+      <button id="player-confirm-btn" class="edit-only" type="button">CONFIRM</button>
     </div>
   </div>
 
   <div id="dialog-section">
     <div id="dialog-text"><span id="dialog-typed"></span><span class="arrow">&#9660;</span></div>
     <div id="stats-strip">
-      <div class="stat-cell"><div class="stat-cell-label">Listed</div><div class="stat-cell-value listed" id="stat-listed">$52</div></div>
-      <div class="stat-cell"><div class="stat-cell-label">Mkt Avg</div><div class="stat-cell-value" id="stat-mkt">$110</div></div>
-      <div class="stat-cell"><div class="stat-cell-label">Spread</div><div class="stat-cell-value spread" id="stat-spread">+$58</div></div>
-      <div class="stat-cell">
-        <div class="stat-cell-label">eBay Fees</div>
-        <div class="stat-cell-input"><input type="number" id="cost-fees" value="13" step="0.5" min="0" max="50">%</div>
+      <div class="cost-section buy-section">
+        <div class="cost-section-label">BUY</div>
+        <div class="cost-cells">
+          <div class="stat-cell"><div class="stat-cell-label">Item</div><div class="stat-cell-value listed" id="stat-item">$52</div></div>
+          <div class="stat-cell"><div class="stat-cell-label">Ship</div><div class="stat-cell-input">$<input type="number" id="cost-buyship" value="5" step="0.5" min="0"></div></div>
+          <div class="stat-cell"><div class="stat-cell-label">Tax%</div><div class="stat-cell-input"><input type="number" id="cost-taxpct" value="7.75" step="0.25" min="0" max="20">%</div></div>
+          <div class="stat-cell"><div class="stat-cell-label">Tax$</div><div class="stat-cell-value" id="stat-taxamt">$4.03</div></div>
+          <div class="stat-cell"><div class="stat-cell-label">Total</div><div class="stat-cell-value listed" id="stat-total">$61</div></div>
+        </div>
       </div>
-      <div class="stat-cell">
-        <div class="stat-cell-label">Shipping</div>
-        <div class="stat-cell-input">$<input type="number" id="cost-ship" value="5" step="0.5" min="0"></div>
+      <div class="cost-section sell-section">
+        <div class="cost-section-label">SELL</div>
+        <div class="cost-cells">
+          <div class="stat-cell"><div class="stat-cell-label">Mkt Avg</div><div class="stat-cell-value" id="stat-mkt">$110</div></div>
+          <div class="stat-cell"><div class="stat-cell-label">Spread</div><div class="stat-cell-value spread" id="stat-spread">+$58</div></div>
+          <div class="stat-cell"><div class="stat-cell-label">eBay Fees</div><div class="stat-cell-input"><input type="number" id="cost-fees" value="13" step="0.5" min="0" max="50">%</div></div>
+          <div class="stat-cell"><div class="stat-cell-label">Admin</div><div class="stat-cell-input">$<input type="number" id="cost-admin" value="10" step="1" min="0"></div></div>
+          <div class="stat-cell"><div class="stat-cell-label">Net</div><div class="stat-cell-value net" id="cost-net">~$33</div></div>
+        </div>
       </div>
-      <div class="stat-cell">
-        <div class="stat-cell-label">Admin</div>
-        <div class="stat-cell-input">$<input type="number" id="cost-admin" value="10" step="1" min="0"></div>
-      </div>
-      <div class="stat-cell"><div class="stat-cell-label">Net</div><div class="stat-cell-value net" id="cost-net">~$33</div></div>
     </div>
     <div id="pop-bar">
       <span class="pop-label">PSA POP:</span>
@@ -1193,6 +1434,41 @@ const POKEMON_COORDS = {
   Mewtwo:    { front: {sheet:"mewtwo_front",    sx:0, sy:0, sw:64, sh:64}, back: {sheet:"mewtwo_back",    sx:0, sy:0, sw:64, sh:64} }
 };
 
+/* Player's actual inventory — your listings. Pulled into the player stat box
+   on page load. Add more entries to grow the rotation. */
+const PLAYER_CARDS = [
+  { card_name: "Dark Kadabra",  set: "Team Rocket", card_number: "39/82", edition: "1st Edition",
+    grader: "CGC", grade: 9.5, grade_label: "MINT+",
+    listed_price: 64.99, market_avg: 55, shipping: 0, ebay_fees_pct: 6, admin: 0,
+    pop_grader: 28, pop_total: 996, rarity: "UNCOMMON",
+    seller_username: "fletchketchem", seller_feedback: 33, seller_feedback_pct: 94.7,
+    cert_number: "1401008524271" },
+  { card_name: "Dark Raticate", set: "Team Rocket", card_number: "51/82", edition: "1st Edition",
+    grader: "SGC", grade: 10, grade_label: "GEM MINT",
+    listed_price: 95.00, market_avg: 80, shipping: 0, ebay_fees_pct: 6, admin: 0,
+    pop_grader: 2, pop_total: 2, rarity: "ULTRA RARE",
+    seller_username: "fletchketchem", seller_feedback: 33, seller_feedback_pct: 94.7,
+    cert_number: "3435536" },
+  { card_name: "Mankey",        set: "Team Rocket", card_number: "61/82", edition: "1st Edition",
+    grader: "CGC", grade: 10, grade_label: "GEM MINT",
+    listed_price: 69.99, market_avg: 56, shipping: 0, ebay_fees_pct: 6, admin: 0,
+    pop_grader: null, pop_total: null, rarity: "UNCOMMON",
+    seller_username: "fletchketchem", seller_feedback: 33, seller_feedback_pct: 94.7,
+    cert_number: null },
+  { card_name: "Dark Dugtrio",  set: "Team Rocket", card_number: "23/82", edition: "1st Edition",
+    grader: "CGC", grade: 9.5, grade_label: "MINT+",
+    listed_price: 62.99, market_avg: 50.39, shipping: 0, ebay_fees_pct: 6, admin: 0,
+    pop_grader: null, pop_total: null, rarity: "UNCOMMON",
+    seller_username: "fletchketchem", seller_feedback: 33, seller_feedback_pct: 94.7,
+    cert_number: null },
+  { card_name: "Dark Magneton", set: "Team Rocket", card_number: "28/82", edition: "1st Edition",
+    grader: "CGC", grade: 9.5, grade_label: "MINT+",
+    listed_price: 62.99, market_avg: 50.39, shipping: 0, ebay_fees_pct: 6, admin: 0,
+    pop_grader: null, pop_total: null, rarity: "UNCOMMON",
+    seller_username: "fletchketchem", seller_feedback: 33, seller_feedback_pct: 94.7,
+    cert_number: null }
+];
+
 /* Pool of demo cards — each rotation shows a different grader/grade/price.
    sprite key matches POKEMON_COORDS. variant string is internal (drives
    Pristine→always-★★ detection in getRarityTier). label is display text. */
@@ -1266,6 +1542,28 @@ function drawTrainerWithBadge(canvas, sheetKey, srcRect, scale) {
 /* 32-bit pixel-art grader badge. Renders to any canvas at its current dims.
    PSA: red/white. CGC: white/red + scales. BGS: gold/black. SGC: black/white.
    TAG: black/white + inner border. */
+/* Team Rocket "R" pixel badge — red circle, white R inside */
+function drawTrainerBadgeR(canvas) {
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  // Red filled circle
+  ctx.beginPath();
+  ctx.arc(w/2, h/2, w/2 - 0.5, 0, Math.PI * 2);
+  ctx.fillStyle = '#cc0000';
+  ctx.fill();
+  // White "R" centered (hand-pixeled 5x7 from PX_FONT)
+  const R = ['11110','10001','10001','11110','10100','10010','10001'];
+  const block = 1;
+  const startX = Math.floor(w/2 - 2.5);
+  const startY = Math.floor(h/2 - 3.5);
+  ctx.fillStyle = '#ffffff';
+  for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) {
+    if (R[r][c] === '1') ctx.fillRect(startX + c, startY + r, block, block);
+  }
+}
+
 function drawGraderBadgePx(canvas, grader) {
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
@@ -2224,27 +2522,174 @@ function applyTimeframe(tf) {
    Editable cost stack — eBay fees / shipping / admin → real-time Net
    Net = Spread − Admin − (Listed × fees%) − Shipping
    ========================================================================= */
+/* =========================================================================
+   Player stat box — editable mirror of foe. Every field listens for change/
+   input and recomputes HP bar + pokeball count + rarity line.
+   ========================================================================= */
+function pokeballsForGrade(gradeStr) {
+  const g = parseFloat(String(gradeStr).replace(/[^\d.]/g, '')) || 0;
+  if (g >= 10)  return 6;
+  if (g >= 9.5) return 5;
+  if (g >= 9)   return 4;
+  if (g >= 8)   return 3;
+  if (g >= 7)   return 2;
+  return 1;
+}
+function applyPlayerChanges() {
+  const grader = $('player-grader-sel').value;
+  const lvText = $('player-level-sel').value;
+  const label  = $('player-label-sel').value;
+  const listed = parseFloat($('player-listed').value) || 0;
+  const market = parseFloat($('player-market').value) || 0;
+  const pop    = parseInt($('player-pop').value, 10)  || 0;
+  const rarityCls = $('player-rarity-sel').value;
+
+  // Player grader badge
+  drawGraderBadgePx($('player-grader-badge'), grader);
+  // 1st Edition stamp on player (always 1st Ed in demo — user can flag later)
+  draw1stEditionStamp($('player-first-ed'), '1st Edition');
+
+  // HP bar from price ratio
+  const hpPct = market > 0 ? Math.max(0, Math.min(100, Math.round((listed / market) * 100))) : 0;
+  const fill = $('player-hp-fill');
+  fill.style.background = getHpColor(hpPct);
+  fill.style.width = hpPct + '%';
+  fill.classList.toggle('critical', hpPct < 20);
+
+  // Pokeball count from grade
+  const filled = pokeballsForGrade(lvText);
+  drawPokeballRow($('player-pokeballs'), filled, 6);
+
+  // Rarity line — tier from dropdown overrides auto-computation; pop from input
+  const tierCfg = {
+    ultra:    { sym: '★★', cls: 'ultra',    label: 'ULTRA RARE' },
+    rare:     { sym: '★',  cls: 'rare',     label: 'RARE' },
+    uncommon: { sym: '◆',  cls: 'uncommon', label: 'UNCOMMON' },
+    common:   { sym: '●',  cls: 'common',   label: 'COMMON' }
+  }[rarityCls] || { sym: '★', cls: 'rare', label: 'RARE' };
+  // Re-render rarity line WHILE preserving the dropdown + pop input controls
+  const rare = $('player-rarity');
+  // Find the controls
+  const sel = $('player-rarity-sel');
+  const popIn = $('player-pop');
+  // Clear and rebuild
+  rare.innerHTML = '';
+  rare.appendChild(sel);
+  const sep = document.createElement('span');
+  sep.className = 'rarity-sep'; sep.textContent = '—';
+  rare.appendChild(sep);
+  rare.appendChild(document.createTextNode(' PSA POP '));
+  rare.appendChild(popIn);
+
+  // Defaults
+  void grader; void label; // suppress unused
+}
+function setupPlayerEditor() {
+  // Hydrate player stat box from PLAYER_CARDS (random pick if multiple)
+  if (PLAYER_CARDS && PLAYER_CARDS.length) {
+    const pc = PLAYER_CARDS[Math.floor(Math.random() * PLAYER_CARDS.length)];
+    $('player-pokemon-name').textContent = pc.card_name.toUpperCase();
+    $('player-level-sel').value          = 'Lv' + pc.grade;
+    $('player-grader-sel').value         = pc.grader;
+    $('player-label-sel').value          = pc.grade_label;
+    $('player-listed').value             = pc.listed_price;
+    $('player-market').value             = pc.market_avg;
+    $('player-pop').value                = pc.pop_grader != null ? pc.pop_grader : '';
+    // Map rarity text to dropdown value
+    const rarityMap = { 'ULTRA RARE':'ultra', 'RARE':'rare', 'UNCOMMON':'uncommon', 'COMMON':'common' };
+    $('player-rarity-sel').value         = rarityMap[pc.rarity] || 'rare';
+    $('player-feedback').textContent     = `${pc.seller_feedback} feedback (${pc.seller_feedback_pct}%)`;
+  }
+  const ids = ['player-pokemon-name','player-level-sel','player-grader-sel','player-label-sel',
+               'player-listed','player-market','player-rarity-sel','player-pop'];
+  ids.forEach(id => {
+    const el = $(id); if (!el) return;
+    const evt = (el.tagName === 'SELECT' || el.tagName === 'INPUT') ? 'change' : 'input';
+    el.addEventListener(evt, applyPlayerChanges);
+    if (el.tagName === 'INPUT') el.addEventListener('input', applyPlayerChanges);
+  });
+
+  // CONFIRM button → write display values + flip to DISPLAY MODE
+  $('player-confirm-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    applyPlayerChanges();          // ensure HP/pokeballs are current
+    syncPlayerDisplayValues();     // write display spans from input values
+    $('player-stat-box').classList.remove('edit-mode');
+    $('player-stat-box').classList.add('display-mode');
+  });
+
+  // Click anywhere on the display-mode stat box → back to EDIT MODE
+  $('player-stat-box').addEventListener('click', (e) => {
+    const box = $('player-stat-box');
+    if (!box.classList.contains('display-mode')) return;
+    box.classList.remove('display-mode');
+    box.classList.add('edit-mode');
+  });
+
+  applyPlayerChanges();
+  syncPlayerDisplayValues();
+}
+
+/* Mirror current input values into the display-only spans. Called on every
+   CONFIRM so display mode reflects whatever was last edited. */
+function syncPlayerDisplayValues() {
+  $('player-name-display').textContent  = $('player-pokemon-name').textContent.trim();
+  $('player-level-display').textContent = $('player-level-sel').value;
+  $('player-label-display').textContent = $('player-label-sel').value;
+  $('player-prices-display').textContent = `$${$('player-listed').value} / $${$('player-market').value}`;
+  // Rarity display: same format as foe — ★ RARE — PSA POP 23
+  const tierCfg = {
+    ultra:    { sym: '★★', cls: 'ultra',    label: 'ULTRA RARE' },
+    rare:     { sym: '★',  cls: 'rare',     label: 'RARE' },
+    uncommon: { sym: '◆',  cls: 'uncommon', label: 'UNCOMMON' },
+    common:   { sym: '●',  cls: 'common',   label: 'COMMON' }
+  }[$('player-rarity-sel').value] || { sym: '★', cls: 'rare', label: 'RARE' };
+  $('player-rarity-display').innerHTML =
+    `<span class="sym ${tierCfg.cls}">${tierCfg.sym}</span>` +
+    `<span class="rarity-label">${tierCfg.label}</span>` +
+    `<span class="rarity-sep">—</span>PSA POP ${$('player-pop').value}`;
+}
+
+function updateTriggerPanel(pick) {
+  const belowMkt = Math.round(100 - pick.hp);
+  const belowAth = belowMkt + 25; // demo approximation
+  const pop = CARD_DATA.pop_psa_95 || 23;
+  const tier = getRarityTier('PSA', pick.grade, pick.variant, pop);
+  $('tp-type').textContent      = CARD_DATA.trigger_type || 'recase_arbitrage';
+  $('tp-spread-pct').textContent= '−' + belowMkt + '%';
+  $('tp-ath-pct').textContent   = '−' + belowAth + '%';
+  $('tp-pop').textContent       = `${pop} (${tier.label})`;
+  $('tp-days').textContent      = (CARD_DATA.days_to_sell_avg || 4) + 'd';
+  $('tp-set6m').textContent     = '+' + (CARD_DATA.set_appreciation_6m || 20) + '%';
+  $('tp-card6m').textContent    = '+' + (CARD_DATA.card_appreciation_6m || 28) + '%';
+}
+
 function setupCostEditor() {
-  ['cost-fees', 'cost-ship', 'cost-admin'].forEach(id => {
-    $(id).addEventListener('input', recomputeNet);
+  ['cost-fees', 'cost-buyship', 'cost-taxpct', 'cost-admin'].forEach(id => {
+    const el = $(id); if (el) el.addEventListener('input', recomputeNet);
   });
   recomputeNet();
 }
 function recomputeNet() {
-  const fees  = parseFloat($('cost-fees').value)  || 0;
-  const ship  = parseFloat($('cost-ship').value)  || 0;
-  const admin = parseFloat($('cost-admin').value) || 0;
-  const listed = CARD_DATA.listed_price;
-  const market = CARD_DATA.market_avg_90day;
-  const spread = market - listed;
-  const feeAmt = listed * (fees / 100);
-  const net = spread - admin - feeAmt - ship;
-  // Keep the three static cells synced with CARD_DATA every recompute,
-  // so a pool rotation cascades through the entire cost chain.
-  $('stat-listed').textContent = '$' + listed;
-  $('stat-mkt').textContent    = '$' + market;
-  $('stat-spread').textContent = (spread >= 0 ? '+$' : '-$') + Math.abs(spread);
-  $('cost-net').textContent    = (net >= 0 ? '~$' : '-$') + Math.abs(Math.round(net));
+  const fees    = parseFloat($('cost-fees').value)    || 0;   // % on sale
+  const buyShip = parseFloat($('cost-buyship').value) || 0;   // $ to buy
+  const taxPct  = parseFloat($('cost-taxpct').value)  || 0;   // % buyer tax
+  const admin   = parseFloat($('cost-admin').value)   || 0;   // $ recase/supplies
+  const item    = CARD_DATA.listed_price;
+  const market  = CARD_DATA.market_avg_90day;
+  const spread  = market - item;
+  const taxAmt  = item * (taxPct / 100);
+  const total   = item + buyShip + taxAmt;          // true cost to own
+  const feeAmt  = market * (fees / 100);            // fees on sale price
+  const net     = market - total - feeAmt - admin;  // true profit
+  // BUY section
+  $('stat-item').textContent    = '$' + item;
+  $('stat-taxamt').textContent  = '$' + taxAmt.toFixed(2);
+  $('stat-total').textContent   = '$' + Math.round(total);
+  // SELL section
+  $('stat-mkt').textContent     = '$' + market;
+  $('stat-spread').textContent  = (spread >= 0 ? '+$' : '-$') + Math.abs(spread);
+  $('cost-net').textContent     = (net >= 0 ? '~$' : '-$') + Math.abs(Math.round(net));
 }
 
 /* =========================================================================
@@ -2361,6 +2806,8 @@ async function init() {
   setupTimeframeToggle();
   // Editable cost stack
   setupCostEditor();
+  // Editable player stat box — full mirror of foe + auto-recalc on edit
+  setupPlayerEditor();
 
   // Static UI state
   renderDialogAndButtons(CARD_DATA);
@@ -2396,8 +2843,12 @@ async function init() {
   drawGraderBadgePx($('foe-grader-badge'), CARD_DATA.grader);
   // Badge showcase — render all 5 designs so you can eyeball them
   ['PSA','CGC','BGS','SGC','TAG'].forEach(g => drawGraderBadgePx($('badge-' + g.toLowerCase()), g));
-  // Hand-pixeled POKÉMON: BLACKHOLE logo in the right-side panel
-  drawBlackholeLogo();
+  // Team Rocket "R" pixel badge next to @fletchketchem
+  drawTrainerBadgeR($('player-tr-badge'));
+  // Player stat box name = the Pokemon (their nickname in the demo)
+  document.getElementById('player-pokemon-name').textContent = pick.sprite;
+  // Trigger criteria panel
+  updateTriggerPanel(pick);
   // 1st Edition stamp (conditional on edition field)
   draw1stEditionStamp($('foe-first-ed'), CARD_DATA.edition);
 
