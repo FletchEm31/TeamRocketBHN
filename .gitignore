@@ -1,0 +1,15 @@
+# Local Claude Code settings
+.claude/
+
+# Sprite-measurement debug scratch (PowerShell crop outputs, brief extraction)
+POKEMON BLACKHOLE/DOCS/_*.png
+POKEMON BLACKHOLE/DOCS/_*.txt
+POKEMON BLACKHOLE/DOCS/_*.xml
+
+# Word lock files
+~$*.docx
+
+# Intermediate sprite cache-bust copies — only the live /v11/ set matters
+POKEMON BLACKHOLE/assets/sprites/processed/
+POKEMON BLACKHOLE/assets/sprites/v9/
+POKEMON BLACKHOLE/assets/sprites/v10/
