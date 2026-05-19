@@ -1,0 +1,2507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Pokemon: Blackhole — Battle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     POKEMON: BLACKHOLE — Phase 1 Battle Screen
+     Team Rocket BHN — Blackhole Network
+     Single self-contained UI. All data hardcoded. Audio off by default.
+     ============================================================ */
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #000000;
+    color: #fff;
+    font-family: 'Press Start 2P', monospace;
+    min-height: 100vh;
+    -webkit-font-smoothing: none;
+    image-rendering: pixelated;
+    overflow-x: hidden;
+  }
+  canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
+
+  #app {
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 16px 8px 24px;
+    position: relative;
+    background: #000000;     /* explicit black so no parent bg can leak gray */
+  }
+  canvas { outline: none; }   /* no default focus outline on any canvas */
+
+  /* ---------- Audio toggle (always reachable) ---------- */
+  #audio-toggle {
+    position: fixed;
+    top: 12px; right: 12px;
+    width: 40px; height: 40px;
+    background: #2a3a5a;
+    color: #c8a820;
+    border: 2px solid #c8a820;
+    border-radius: 6px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 1000;
+    line-height: 36px;
+    text-align: center;
+    padding: 0;
+    opacity: 0.85;
+  }
+  #audio-toggle:hover { opacity: 1; box-shadow: 0 0 0 2px rgba(200,168,32,0.4); }
+  #audio-toggle.on { background: #c8a820; color: #2a3a5a; }
+
+  #skip-button {
+    position: fixed;
+    top: 12px; right: 60px;
+    height: 40px;
+    padding: 0 8px;
+    background: #2a3a5a;
+    color: #c8a820;
+    border: 2px solid #c8a820;
+    border-radius: 6px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    cursor: pointer;
+    z-index: 1000;
+    opacity: 0.85;
+    letter-spacing: 1px;
+  }
+  #skip-button:hover { opacity: 1; }
+
+  #trainer-logo {
+    position: absolute;
+    top: 6px; left: 6px;     /* top-LEFT corner of battle scene */
+    width: 130px; height: auto;
+    image-rendering: pixelated;
+    image-rendering: -webkit-optimize-contrast;
+    z-index: 50;        /* above arena bg + sprites, doesn't move with cutscene overlays */
+    pointer-events: none;
+  }
+
+  /* Badge showcase row — sits below the skip/audio buttons in the top-right black space */
+  #badge-showcase {
+    position: fixed;
+    top: 60px; right: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 1000;
+    padding: 6px;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid #2a3a5a;
+    border-radius: 4px;
+  }
+  #badge-showcase canvas {
+    image-rendering: pixelated;
+    width: 36px; height: 14px;
+    display: block;
+  }
+
+  /* Hand-pixeled logo — sits in the right-side black area for inspection */
+  #blackhole-logo {
+    position: fixed;
+    top: 380px; right: 12px;
+    width: 400px; height: 180px;
+    image-rendering: pixelated;
+    background: #000010;
+    border: 2px solid #2a3a5a;
+    border-radius: 4px;
+    z-index: 1000;
+  }
+
+  /* Rarity legend — sizes bumped ~30% per user */
+  #rarity-legend {
+    position: fixed;
+    top: 200px; right: 12px;
+    width: 260px;
+    z-index: 1000;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid #2a3a5a;
+    border-radius: 4px;
+    padding: 10px;
+    color: #fff;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    line-height: 1.5;
+    letter-spacing: 0.5px;
+  }
+  .rl-title { color: #c8a820; margin-bottom: 8px; font-size: 9px; letter-spacing: 1px; }
+  .rl-row {
+    display: grid;
+    grid-template-columns: 24px 92px 1fr;
+    gap: 5px;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .rl-sym { font-size: 12px; }
+  .rl-sym.ultra    { color: #d4af37; text-shadow: 0 0 2px rgba(212,175,55,0.55); }
+  .rl-sym.rare     { color: #b06820; }
+  .rl-sym.uncommon { color: #4480cc; }
+  .rl-sym.common   { color: #b8b8c8; }
+  .rl-name { font-size: 8px; color: #d8d8f0; }
+  .rl-pop  { font-size: 7px; color: #909090; }
+  .rl-note { font-size: 7px; color: #909090; margin-top: 8px; padding-top: 5px; border-top: 1px solid #333; }
+
+  /* ---------- Battle scene ---------- */
+  #battle-scene {
+    position: relative;
+    width: 100%;
+    height: 300px;          /* foe stat box now overhangs from outside */
+    background: #000;
+    overflow: hidden;
+    border: 3px solid #1a1a26;
+  }
+
+  /* ============================================================
+     Arena background — PURE CSS ONLY. No images, no sprite sheets.
+     Each visual layer is a discrete child div with a named class.
+     Layer order (back to front):
+       .bg-floor (white/gray gradient base)
+       .bg-stripe-top (purple FRLG stripe)
+       .bg-stripe-fade (lighter purple fade)
+       .bg-scanlines (horizontal scan lines)
+       .bg-platform-shadow.foe / .player (shadow ovals)
+       .bg-platform-line.foe / .player (thin green platform lines)
+     ============================================================ */
+  #arena-bg {
+    position: absolute;
+    inset: 0;
+    background-color: #f0f0f8; /* solid base fallback */
+    overflow: hidden;
+    z-index: 1;
+  }
+  .bg-floor {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, #f0f0f8 0%, #d8d8e8 100%);
+    z-index: 1;
+  }
+  .bg-stripe-top {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 22px;
+    background: linear-gradient(to bottom, #8870bb 0%, #bbaaee 100%);
+    z-index: 2;
+  }
+  .bg-stripe-fade {
+    position: absolute;
+    top: 22px; left: 0; right: 0;
+    height: 6px;
+    background: #ddd8f0;
+    z-index: 2;
+  }
+  .bg-scanlines {
+    position: absolute;
+    inset: 28px 0 0 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(120,120,170,0.0) 0px,
+      rgba(120,120,170,0.0) 6px,
+      rgba(120,120,170,0.55) 7px,
+      rgba(120,120,170,0.55) 8px
+    );
+    pointer-events: none;
+    z-index: 3;
+  }
+  /* Green oval platforms — bright top, darker shadow at base, FRLG-style */
+  .bg-platform {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 28%, #9be07a 0%, #5cb04a 55%, #2f7a30 100%);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.32);
+    pointer-events: none;
+    z-index: 4;
+  }
+  .bg-platform.foe    { top: 200px; right: 35px; width: 160px; height: 32px; }
+  /* Player platform centered under player Pokemon canvas
+     (canvas at left:20 width:192 -> center x=116; platform width 200 -> left=16) */
+  .bg-platform.player { bottom: 6px; left: 16px; width: 200px; height: 36px; }
+
+  /* ---------- Combatant canvases (trainers + Pokemon) ---------- */
+  .combatant {
+    position: absolute;
+    pointer-events: none;
+    width: 192px;   /* default = Pokemon size */
+    height: 192px;
+    transition: transform 1.2s ease-in-out, opacity 0.4s ease-out;
+  }
+  .combatant.trainer { width: 80px; height: 96px; }  /* trainers shrunk per spec ~72-80x82-96 */
+  .pokeball-inline {
+    display: block;
+    width: 104px;
+    height: 14px;
+    image-rendering: pixelated;
+  }
+  .pokeball-cert-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 4px 0 6px;
+    gap: 6px;
+  }
+  .pokeball-cert-row .stat-cert {
+    margin: 0;
+    flex-shrink: 0;
+    white-space: nowrap;
+    word-break: keep-all;
+    overflow: visible;
+    font-size: 5px;
+    letter-spacing: 0.3px;
+  }
+  /* Trainers smaller — feet anchored at platform level */
+  #foe-trainer  { top: 130px; right: 75px; transform: translateX(280%); }
+  #player-trainer { bottom: 30px; left: 75px; transform: translateX(-280%); }
+  /* Pokemon hidden until materialize */
+  #foe-pokemon, #player-pokemon { opacity: 0; }
+  #foe-pokemon    { top: 40px; right: 30px; }
+  #player-pokemon { bottom: 4px; left: 20px; }
+
+  .combatant.float { animation: floatY 3s ease-in-out infinite; }
+  @keyframes floatY {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-4px); }
+  }
+
+  .combatant.critical { animation: critShake 0.1s linear infinite, critFlash 0.3s linear infinite; }
+  @keyframes critShake { 0%,100%{margin-left:0} 25%{margin-left:-3px} 75%{margin-left:3px} }
+  @keyframes critFlash { 0%,100%{opacity:1} 50%{opacity:0.55} }
+
+  .combatant.faint { transition: transform 0.5s ease-in, opacity 0.5s ease-in; transform: translateY(80px) !important; opacity: 0 !important; }
+
+  /* Pokeballs now live INSIDE stat boxes (FRLG-style) — see .pokeball-inline */
+
+  /* ---------- Stat boxes — foe inside arena top-right, player below arena ---------- */
+  .combatant   { z-index: 10; }
+  .pokeball-row{ z-index: 5;  }
+  .stat-box {
+    background: #ffffff;
+    color: #1a1a26;
+    border: 2px solid #1a1a26;
+    border-radius: 3px;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.55);
+    padding: 6px 8px;
+    font-size: 8px;
+    line-height: 1.5;
+    opacity: 0;
+    transition: opacity 0.4s, transform 0.5s ease-out;
+  }
+  /* Foe stat box overhangs arena top — mirror of how player stat box hangs below */
+  #foe-stat-wrap {
+    display: flex;
+    justify-content: flex-end;
+    padding: 4px 6px 0;
+    margin-bottom: -22px;
+    position: relative;
+    z-index: 25;
+  }
+  #foe-stat-box {
+    width: 220px;
+    max-width: calc(100% - 12px);
+    box-sizing: border-box;
+    transform: translateX(40px);
+  }
+  #foe-stat-box .name-row { gap: 4px; }
+  #foe-stat-box .grade-row { gap: 6px; font-size: 7px; }
+  #foe-stat-box .grade-row .stat-level { font-size: 9px; min-width: 36px; }
+  #foe-stat-box .grade-row .stat-grader-label { font-size: 7px; flex: 1; min-width: 0; overflow: hidden; }
+  #foe-stat-box .first-ed-stamp { width: 22px; height: 22px; }
+  #foe-stat-box .name-row { align-items: center; }
+  /* Box the Lv label like the grader badge */
+  #foe-stat-box .grade-row .stat-level {
+    display: inline-block;
+    background: #1a1a26;
+    color: #ffffff;
+    padding: 2px 5px;
+    border-radius: 2px;
+    border: 1px solid #1a1a26;
+    font-size: 8px;
+    min-width: auto;
+    letter-spacing: 0.5px;
+  }
+  #foe-stat-box .stat-row { min-width: 0; }
+  #foe-stat-box .stat-name,
+  #foe-stat-box .stat-grader,
+  #foe-stat-box .stat-appreciation { overflow: hidden; text-overflow: clip; }
+  #player-stat-wrap {
+    display: flex;
+    justify-content: flex-start;
+    padding: 4px 6px 0;
+    margin-top: -22px;    /* overlap arena bottom edge per spec */
+    position: relative;
+    z-index: 25;
+  }
+  #player-stat-box {
+    width: 250px;
+    max-width: calc(100% - 12px);
+    transform: translateX(-40px);
+  }
+  .stat-box.visible { opacity: 1; transform: translateX(0); }
+
+  .stat-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .stat-row.stat-sub-row { margin-top: 3px; font-size: 7px; color: #505060; }
+  .stat-name { font-size: 9px; letter-spacing: 1px; }
+  .stat-level { color: #303030; font-size: 9px; white-space: nowrap; }
+
+  /* Foe nameplate two-column grid: left = name + grader, right = Lv + appreciation stack */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 6px;
+  }
+  .stat-grid .left-col  { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .stat-grid .right-col {
+    display: flex; flex-direction: column; gap: 1px;
+    text-align: right; align-items: flex-end;
+  }
+  .stat-grid .right-col .stat-level { font-size: 9px; color: #303030; }
+  .stat-grid .right-col .appr { font-size: 6px; color: #d06820; letter-spacing: 0.5px; }
+  .stat-grader-line {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 7px;
+    overflow: hidden;
+  }
+  .stat-grader-label { white-space: nowrap; overflow: hidden; text-overflow: clip; }
+  .grader-badge-px {
+    image-rendering: pixelated;
+    width: 36px; height: 14px;
+    flex: 0 0 auto;
+    vertical-align: middle;
+  }
+  .first-ed-stamp {
+    image-rendering: pixelated;
+    width: 22px; height: 22px;
+    flex: 0 0 auto;
+    vertical-align: middle;
+  }
+  .stat-rarity {
+    font-size: 7px;
+    color: #1a1a26;
+    margin-top: 3px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .stat-rarity .sym             { font-size: 9px; margin: 0 2px; }
+  .stat-rarity .sym.ultra       { color: #d4af37; text-shadow: 0 0 2px rgba(212,175,55,0.55); }
+  .stat-rarity .sym.rare        { color: #b06820; }
+  .stat-rarity .sym.uncommon    { color: #4480cc; }
+  .stat-rarity .sym.common      { color: #707088; }
+  .stat-rarity .rarity-label    { font-size: 7px; }
+  .stat-rarity .rarity-sep      { color: #707088; margin: 0 3px; }
+  .stat-cert {
+    font-size: 6px;
+    color: #707088;
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+    word-break: break-all;
+  }
+  .comp-count {
+    font-size: 6px;
+    color: #808088;
+    margin-top: 4px;
+    margin-bottom: 1px;
+    letter-spacing: 0.3px;
+  }
+  .hp-label { display: flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 8px; }
+  .hp-line { display: inline-block; flex: 1; height: 0; border-top: 2px solid #404048; }
+  .hp-bar-container {
+    height: 5px;
+    background: #404048;
+    border: 1px solid #1a1a20;
+    border-radius: 2px;
+    margin-top: 2px;
+    overflow: hidden;
+  }
+  .hp-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: #48c848;
+    transition: width 1.5s ease-out, background-color 0.4s;
+  }
+  .hp-bar-fill.player-hp { background: #48c848; }
+  .hp-bar-fill.critical { animation: hpFlash 0.3s linear infinite; }
+  @keyframes hpFlash { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.7); } }
+  .hp-numbers { font-size: 7px; text-align: right; margin-top: 2px; }
+  .exp-label { font-size: 7px; margin-top: 4px; color: #404060; }
+  .exp-bar-container {
+    height: 3px;
+    background: #404048;
+    border: 1px solid #1a1a20;
+    margin-top: 2px;
+    overflow: hidden;
+  }
+  .exp-bar-fill { height: 100%; width: 0%; background: #4488dd; transition: width 1.5s ease-out 0.4s; }
+
+  /* Grader badge dot inside foe stat box */
+  .grader-badge {
+    display: inline-block;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.4);
+    font-size: 6px;
+    text-align: center;
+    line-height: 7px;
+    color: #fff;
+    font-family: 'Press Start 2P', monospace;
+  }
+  .grader-badge.psa  { background: #cc0000; }
+  .grader-badge.cgc  { background: #0044cc; }
+  .grader-badge.bgs  { background: #cc9900; }
+  .grader-badge.sgc  { background: #333333; }
+  .grader-badge.tag  { background: #6633cc; }
+  .grader-badge.misc { background: #888888; }
+  .grader-badge.raw  { background: #885533; }
+
+  /* ---------- Dialog section ---------- */
+  #dialog-section {
+    margin-top: 10px;
+    background: #2a3a5a;
+    border: 3px solid #c8a820;
+    border-radius: 4px;
+    padding: 10px;
+    position: relative;
+    color: #fff;
+  }
+  #dialog-section::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border: 1px solid #c8a820;
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  #tier-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    font-size: 8px;
+    background: #888888;
+    color: #fff;
+    border-radius: 2px;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+  #tier-badge.tier-watch     { background: #0044cc; }
+  #tier-badge.tier-buy       { background: #cc9900; }
+  #tier-badge.tier-strong    { background: #cc5500; }
+  #tier-badge.tier-critical  { background: #cc0000; animation: hpFlash 0.4s linear infinite; }
+
+  #dialog-text {
+    font-size: 10px;
+    line-height: 1.7;
+    min-height: 60px;
+    position: relative;
+    padding-right: 16px;
+  }
+  #dialog-text .typed-char { white-space: pre-wrap; }
+  #dialog-text .arrow {
+    position: absolute;
+    right: 0; bottom: 0;
+    color: #c8a820;
+    animation: arrowBlink 0.6s steps(2) infinite;
+    font-size: 10px;
+  }
+  @keyframes arrowBlink { 50% { opacity: 0; } }
+
+  /* Stats strip — 6 cells horizontal */
+  #stats-strip {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+    margin-top: 10px;
+    background: rgba(0,0,0,0.25);
+    padding: 6px;
+    border-radius: 2px;
+  }
+  .stat-cell { text-align: center; font-size: 7px; }
+  .stat-cell-label { color: #b8b8d0; margin-bottom: 3px; letter-spacing: 0.5px; }
+  .stat-cell-value { font-size: 9px; color: #fff; }
+  .stat-cell-value.listed  { color: #ff6868; }
+  .stat-cell-value.spread  { color: #68e068; }
+  .stat-cell-value.net     { color: #68e068; }
+  .stat-cell-value.days    { color: #6cb4ff; }
+  .stat-cell-input {
+    font-size: 8px; color: #fff;
+    display: flex; align-items: center; justify-content: center; gap: 1px;
+  }
+  .stat-cell-input input {
+    width: 28px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: #1a1a26;
+    background: #ffffff;
+    border: 1px solid #c8a820;
+    border-radius: 2px;
+    padding: 1px 2px;
+    text-align: center;
+    -moz-appearance: textfield;
+  }
+  .stat-cell-input input::-webkit-outer-spin-button,
+  .stat-cell-input input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  /* Pop bar */
+  #pop-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    margin-top: 8px;
+    font-size: 7px;
+    color: #d8d8f0;
+  }
+  .pop-pill {
+    background: transparent;
+    border: 1px solid #ffffff;
+    color: #ffffff;
+    padding: 3px 6px;
+    border-radius: 2px;
+    font-size: 7px;
+    letter-spacing: 0.5px;
+  }
+  .pop-pill.outlined { border: 1px solid #ffffff; }
+  .pop-pill.pop-current { border-color: #ff4848; color: #ffd0d0; }
+  .pop-sep   { color: #6878a0; }
+  .pop-label { color: #d8d8f0; }
+  .timeframe-toggle { display: inline-flex; gap: 3px; margin-left: 2px; }
+  .timeframe-toggle button {
+    background: transparent;
+    color: #b8b8d0;
+    border: 1px solid #5a6a90;
+    padding: 3px 5px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    cursor: pointer;
+    border-radius: 2px;
+    letter-spacing: 0.5px;
+  }
+  .timeframe-toggle button.active {
+    background: #c8a820;
+    color: #1a1a26;
+    border-color: #c8a820;
+  }
+  .timeframe-toggle button:hover { border-color: #c8a820; }
+
+  /* Action buttons — 2x2 grid */
+  #action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 12px;
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  #action-buttons.visible { opacity: 1; }
+  .action-btn {
+    background: #1f2a44;
+    color: #fff;
+    border: 2px solid #5a6a90;
+    padding: 10px 8px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    cursor: pointer;
+    border-radius: 2px;
+    letter-spacing: 1px;
+    transition: border-color 0.15s, transform 0.05s;
+  }
+  .action-btn:hover { border-color: #c8a820; }
+  .action-btn:active { transform: translateY(1px); }
+  .action-btn.primary { border-color: #c8a820; }
+  .action-btn.critical {
+    border-color: #ff4848;
+    color: #ff8080;
+    animation: hpFlash 0.4s linear infinite;
+  }
+
+  /* ---------- Overlays (cutscene) ---------- */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 500;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .overlay.visible { opacity: 1; pointer-events: auto; }
+
+  #black-overlay { background: #000; }
+  #flash-overlay { background: #fff; }
+
+  #exclamation-overlay { background: #000; flex-direction: column; gap: 16px; }
+  .exclamation-mark {
+    color: #f8d048;
+    font-size: 96px;
+    text-shadow: 4px 4px 0 #000, -2px -2px 0 #b08020;
+    animation: exclamPulse 0.45s ease-in-out infinite;
+  }
+  @keyframes exclamPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+  .exclamation-sub {
+    color: #fff;
+    font-size: 10px;
+    text-align: center;
+    line-height: 2;
+    letter-spacing: 1px;
+  }
+
+  /* VS overlay */
+  #vs-overlay { background: #111111; flex-direction: column; }
+  .vs-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr;
+    align-items: center;
+    width: min(680px, 92vw);
+    color: #fff;
+  }
+  .vs-label { font-size: 11px; text-align: center; letter-spacing: 1px; }
+  .vs-label.foe-class    { color: #0044cc; text-shadow: 0 0 4px rgba(64,128,255,0.4); }
+  .vs-label.player-class { color: #0044cc; }
+  .vs-portrait {
+    width: 96px; height: 96px;
+    margin: 12px auto;
+    background: transparent;
+    border: none;
+    display: block;
+  }
+  .vs-grader-badge {
+    width: 36px; height: 14px;     /* matches nameplate badge size */
+    image-rendering: pixelated;
+  }
+  .vs-foe-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .vs-foe-header .vs-label { margin: 0; }
+  .vs-big {
+    color: #ff3030;
+    font-size: 56px;
+    text-align: center;
+    text-shadow: 4px 4px 0 #000, -2px -2px 0 #800000;
+  }
+  .vs-name { font-size: 9px; color: #fff; text-align: center; }
+  .vs-sub  { font-size: 7px; color: #b0b0d0; text-align: center; margin-top: 4px; line-height: 1.6; }
+  #vs-dialog {
+    margin-top: 22px;
+    width: min(620px, 95vw);
+    font-size: 9px;
+    line-height: 1.9;
+    color: #fff;
+    background: #2a3a5a;
+    border: 3px solid #c8a820;
+    padding: 12px 16px 14px;
+    position: relative;
+    min-height: 90px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    box-sizing: border-box;
+  }
+  #vs-dialog::before { content: ''; position: absolute; inset: 3px; border: 1px solid #c8a820; pointer-events: none; }
+
+  /* Pokeball flying (during throw + capture sequence) */
+  #pokeball-fly {
+    position: absolute;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(to bottom, #cc1010 0 50%, #fafaf2 50% 100%);
+    border: 1.5px solid #1a1a20;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4);
+    opacity: 0;
+    z-index: 30;
+    pointer-events: none;
+    transform-origin: center center;
+  }
+  #pokeball-fly::after {
+    content: '';
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 5px; height: 5px;
+    background: #fafaf2;
+    border: 1.2px solid #1a1a20;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+  @keyframes pokeballWobble {
+    0%   { transform: rotate(0deg); }
+    20%  { transform: rotate(-18deg); }
+    50%  { transform: rotate(0deg); }
+    80%  { transform: rotate(18deg); }
+    100% { transform: rotate(0deg); }
+  }
+  #pokeball-fly.wobbling { animation: pokeballWobble 0.55s ease-in-out; }
+  #pokeball-fly.caught-flash { box-shadow: 0 0 16px 6px rgba(255,240,140,0.9), inset 0 0 0 1px rgba(0,0,0,0.4); }
+
+  #action-buttons.locked { pointer-events: none; opacity: 0.55; }
+
+  /* Cert lookup + eBay listing button bar — directly under arena, right-aligned.
+     margin-right:0 so eBay button's right edge sits at the same x as the arena's
+     right edge (both bounded by #app inner padding). */
+  #cert-bar {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    margin: 8px 0 0 0;
+  }
+  .cert-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    padding: 8px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #fff;
+    border: 2px solid #1a1a26;
+    letter-spacing: 0.5px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .cert-btn:hover { filter: brightness(1.15); }
+  .cert-btn.psa  { background: #cc0000; }
+  .cert-btn.cgc  { background: #0044cc; }
+  .cert-btn.bgs  { background: #d4af37; color: #1a1a26; }
+  .cert-btn.sgc  { background: #1a1a26; }
+  .cert-btn.tag  { background: #6633cc; }
+  .cert-btn.misc { background: #888888; }
+  .cert-btn.raw  { background: #885533; }
+  .cert-btn.ebay { background: #0653ad; }
+
+  /* START button + FRLG-style popup menu */
+  #start-button {
+    position: fixed;
+    top: 12px; left: 12px;
+    width: 64px; height: 32px;
+    background: #2a3a5a;
+    color: #c8a820;
+    border: 2px solid #c8a820;
+    border-radius: 4px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    cursor: pointer;
+    z-index: 1000;
+    opacity: 0.85;
+    padding: 0;
+    letter-spacing: 1px;
+  }
+  #start-button:hover { opacity: 1; }
+
+  /* Tier badge — in top bar next to START button, not in dialog */
+  #tier-badge-top {
+    position: fixed;
+    top: 12px; left: 84px;
+    height: 32px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    background: #888888;
+    color: #fff;
+    border: 2px solid #1a1a26;
+    border-radius: 6px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    z-index: 1000;
+    opacity: 0.95;
+  }
+  #tier-badge-top.tier-watch     { background: #0044cc; }
+  #tier-badge-top.tier-buy       { background: #cc9900; }
+  #tier-badge-top.tier-strong    { background: #cc5500; }
+  #tier-badge-top.tier-critical  { background: #cc0000; animation: hpFlash 0.4s linear infinite; }
+
+  #start-menu {
+    position: fixed;
+    top: 50%;
+    right: -200px;
+    transform: translateY(-50%);
+    width: 180px;
+    background: #fafaf2;
+    color: #1a1a26;
+    border: 3px solid #1a1a26;
+    border-radius: 4px;
+    box-shadow: 4px 4px 0 rgba(0,0,0,0.55);
+    padding: 14px 0;
+    font-family: 'Press Start 2P', monospace;
+    z-index: 900;
+    transition: right 0.25s ease-out;
+  }
+  #start-menu.open { right: 16px; }
+  .start-menu-item {
+    display: block;
+    padding: 10px 16px;
+    font-size: 10px;
+    color: #1a1a26;
+    cursor: pointer;
+    letter-spacing: 1px;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+  }
+  .start-menu-item:hover, .start-menu-item.active {
+    background: #1a1a26;
+    color: #fafaf2;
+  }
+  .start-menu-item .arrow {
+    display: inline-block;
+    width: 12px;
+    color: #1a1a26;
+  }
+  .start-menu-item.active .arrow { color: #fafaf2; }
+
+  /* Toast (action button feedback) */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2a3a5a;
+    border: 2px solid #c8a820;
+    color: #fff;
+    padding: 10px 14px;
+    font-size: 9px;
+    z-index: 800;
+    opacity: 0;
+    transition: opacity 0.3s;
+    max-width: 90vw;
+    text-align: center;
+    line-height: 1.7;
+  }
+  #toast.visible { opacity: 1; }
+
+  /* Header strip — small identity tag */
+  #header-strip {
+    text-align: center;
+    font-size: 7px;
+    color: #6a7aaa;
+    margin: 0 0 8px;
+    letter-spacing: 2px;
+  }
+
+  @media (max-width: 540px) {
+    #battle-scene { height: 260px; }
+    .stat-box { width: 220px; font-size: 7px; }
+    .stat-name, .stat-level { font-size: 8px; }
+    #dialog-text { font-size: 9px; }
+    .combatant { width: 160px; height: 160px; }
+    .combatant.pokemon.player { width: 200px; height: 200px; }
+    #foe-trainer  { top: 46px; right: 24px; }
+    #player-trainer { bottom: 6px; left: 24px; }
+    #foe-pokemon  { top: 22px; right: 22px; }
+    #player-pokemon { bottom: -4px; left: 16px; }
+    .bg-platform.foe    { top: 110px; right: 28px; width: 130px; height: 26px; }
+    .bg-platform.player { bottom: -2px; left: 20px; width: 180px; height: 34px; }
+  }
+  @media (max-width: 380px) {
+    .stat-box { width: 100%; max-width: 100%; }
+    #foe-stat-wrap, #player-stat-wrap { padding: 0 4px; }
+  }
+</style>
+</head>
+<body>
+
+<button id="audio-toggle" aria-label="Toggle audio" title="Toggle audio">&#9834;</button>
+<button id="skip-button" aria-label="Skip cutscene" title="Skip cutscene">SKIP</button>
+<button id="start-button" aria-label="Open START menu">START</button>
+
+<!-- Tier badge lifted out of the dialog box, lives in the top bar next to START -->
+<div id="tier-badge-top"></div>
+
+<!-- Badge showcase — all 5 grader badge designs rendered side by side -->
+<div id="badge-showcase">
+  <canvas class="grader-badge-px" id="badge-psa" width="36" height="14" title="PSA"></canvas>
+  <canvas class="grader-badge-px" id="badge-cgc" width="36" height="14" title="CGC"></canvas>
+  <canvas class="grader-badge-px" id="badge-bgs" width="36" height="14" title="BGS"></canvas>
+  <canvas class="grader-badge-px" id="badge-sgc" width="36" height="14" title="SGC"></canvas>
+  <canvas class="grader-badge-px" id="badge-tag" width="36" height="14" title="TAG"></canvas>
+</div>
+
+<!-- Rarity tier legend — symbol meanings + per-grader pop thresholds -->
+<div id="rarity-legend">
+  <div class="rl-title">RARITY TIERS</div>
+  <div class="rl-row"><span class="rl-sym ultra">&#9733;&#9733;</span><span class="rl-name">ULTRA RARE</span><span class="rl-pop">PSA &le;10 / CGC &le;5</span></div>
+  <div class="rl-row"><span class="rl-sym rare">&#9733;</span><span class="rl-name">RARE</span><span class="rl-pop">PSA 11-50 / CGC 6-20</span></div>
+  <div class="rl-row"><span class="rl-sym uncommon">&#9670;</span><span class="rl-name">UNCOMMON</span><span class="rl-pop">PSA 51-200 / CGC 21-75</span></div>
+  <div class="rl-row"><span class="rl-sym common">&#9679;</span><span class="rl-name">COMMON</span><span class="rl-pop">PSA 200+ / CGC 75+</span></div>
+  <div class="rl-note">CGC 10 Pristine: always &#9733;&#9733;</div>
+</div>
+
+
+
+<div id="start-menu" aria-hidden="true">
+  <button class="start-menu-item active" data-action="pokedex"><span class="arrow">&#9654;</span>POKEDEX</button>
+  <button class="start-menu-item"        data-action="pokemon"><span class="arrow">&nbsp;</span>POKEMON</button>
+  <button class="start-menu-item"        data-action="bag"><span class="arrow">&nbsp;</span>BAG</button>
+  <button class="start-menu-item"        data-action="save"><span class="arrow">&nbsp;</span>SAVE</button>
+  <button class="start-menu-item"        data-action="quit"><span class="arrow">&nbsp;</span>QUIT</button>
+</div>
+
+<div id="app">
+  <div id="header-strip">TEAM ROCKET BHN &mdash; POKEMON: BLACKHOLE <span style="color:#48c848;margin-left:8px">[v11]</span> <span style="color:#888;margin-left:8px;font-size:6px">T=grader H=HP R=reset</span></div>
+  <div id="sprite-debug" style="font-size:6px;color:#48c848;padding:2px 6px;background:#000;">loading sprite info...</div>
+
+  <!-- Foe stat box: OUTSIDE arena, top-right, overhangs into arena per user spec -->
+  <div id="foe-stat-wrap">
+    <div id="foe-stat-box" class="stat-box">
+      <div class="stat-row name-row">
+        <span class="stat-name">DARK PERSIAN</span>
+        <canvas class="first-ed-stamp" id="foe-first-ed" width="28" height="28"></canvas>
+      </div>
+      <div class="stat-row grade-row">
+        <span class="stat-level">Lv9.5</span>
+        <canvas class="grader-badge-px" id="foe-grader-badge" width="36" height="14"></canvas>
+        <span class="stat-grader-label">BLUE LABEL</span>
+      </div>
+      <div class="hp-label">HP <span class="hp-line"></span></div>
+      <div class="hp-bar-container"><div class="hp-bar-fill" id="foe-hp-fill"></div></div>
+      <div class="hp-numbers" id="foe-hp-numbers">$52 / $110</div>
+      <div class="stat-rarity" id="foe-rarity"></div>
+      <canvas id="foe-pokeballs" class="pokeball-inline" width="104" height="14"></canvas>
+    </div>
+  </div>
+
+  <div id="battle-scene">
+    <div id="arena-bg">
+      <div class="bg-floor"></div>
+      <div class="bg-stripe-top"></div>
+      <div class="bg-stripe-fade"></div>
+      <div class="bg-scanlines"></div>
+      <div class="bg-platform foe"></div>
+      <div class="bg-platform player"></div>
+    </div>
+
+    <canvas id="foe-trainer"    class="combatant trainer foe"    width="80" height="96"></canvas>
+    <canvas id="foe-pokemon"    class="combatant foe pokemon"    width="192" height="192"></canvas>
+    <canvas id="player-trainer" class="combatant trainer player" width="80" height="96"></canvas>
+    <canvas id="player-pokemon" class="combatant player pokemon" width="192" height="192"></canvas>
+
+    <div id="pokeball-fly"></div>
+    <!-- FletchKetchem logo inside battle scene, top-right corner, above all overlays -->
+    <img id="trainer-logo" src="../assets/sprites/fletchketchem_logo.png" alt="FletchKetchem">
+  </div>
+
+  <!-- Cert + eBay buttons sit DIRECTLY below the battle screen, right-aligned -->
+  <div id="cert-bar"></div>
+
+  <!-- Player stat box: bottom-LEFT, overlaps arena bottom edge per user spec -->
+  <div id="player-stat-wrap">
+    <div id="player-stat-box" class="stat-box">
+      <div class="stat-row">
+        <span class="stat-name">TEAM ROCKET BHN</span>
+        <span class="stat-level">Lv99</span>
+      </div>
+      <div class="stat-row stat-sub-row">
+        <span>@fletchketchem</span>
+      </div>
+      <canvas id="player-pokeballs" class="pokeball-inline" width="104" height="14"></canvas>
+      <div class="hp-label">HP <span class="hp-line"></span></div>
+      <div class="hp-bar-container"><div class="hp-bar-fill player-hp" id="player-hp-fill"></div></div>
+      <div class="hp-numbers">880 / 1000</div>
+      <div class="exp-label">Exp (Comp) <span id="comps-readout" style="color:#909090;font-size:6px;float:right;">820 / 1000</span></div>
+      <div class="exp-bar-container"><div class="exp-bar-fill" id="exp-fill"></div></div>
+    </div>
+  </div>
+
+  <div id="dialog-section">
+    <div id="dialog-text"><span id="dialog-typed"></span><span class="arrow">&#9660;</span></div>
+    <div id="stats-strip">
+      <div class="stat-cell"><div class="stat-cell-label">Listed</div><div class="stat-cell-value listed" id="stat-listed">$52</div></div>
+      <div class="stat-cell"><div class="stat-cell-label">Mkt Avg</div><div class="stat-cell-value" id="stat-mkt">$110</div></div>
+      <div class="stat-cell"><div class="stat-cell-label">Spread</div><div class="stat-cell-value spread" id="stat-spread">+$58</div></div>
+      <div class="stat-cell">
+        <div class="stat-cell-label">eBay Fees</div>
+        <div class="stat-cell-input"><input type="number" id="cost-fees" value="13" step="0.5" min="0" max="50">%</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-cell-label">Shipping</div>
+        <div class="stat-cell-input">$<input type="number" id="cost-ship" value="5" step="0.5" min="0"></div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-cell-label">Admin</div>
+        <div class="stat-cell-input">$<input type="number" id="cost-admin" value="10" step="1" min="0"></div>
+      </div>
+      <div class="stat-cell"><div class="stat-cell-label">Net</div><div class="stat-cell-value net" id="cost-net">~$33</div></div>
+    </div>
+    <div id="pop-bar">
+      <span class="pop-label">PSA POP:</span>
+      <span class="pop-pill outlined">10: 12</span>
+      <span class="pop-pill outlined pop-current">9.5: 23 &#9670;</span>
+      <span class="pop-pill outlined">9: 41</span>
+      <span class="pop-sep">|</span>
+      <span class="pop-label">TR 1ST:</span>
+      <span class="pop-pill outlined" id="tr-set-pct">+20%</span>
+      <span class="pop-label">CARD:</span>
+      <span class="pop-pill outlined" id="card-pct">+28%</span>
+      <span class="pop-sep">|</span>
+      <span class="timeframe-toggle">
+        <button data-tf="1m">1M</button>
+        <button data-tf="3m">3M</button>
+        <button data-tf="6m" class="active">6M</button>
+        <button data-tf="12m">12M</button>
+      </span>
+    </div>
+    <div id="action-buttons"></div>
+  </div>
+</div>
+
+<div id="black-overlay" class="overlay visible"></div>
+<div id="exclamation-overlay" class="overlay">
+  <div class="exclamation-mark">!</div>
+  <div class="exclamation-sub">HORIZON DETECTED A TARGET<br>SELLER: adpow-7283</div>
+</div>
+<div id="vs-overlay" class="overlay">
+  <div class="vs-row">
+    <div>
+      <div class="vs-foe-header">
+        <canvas class="vs-grader-badge" id="vs-foe-grader-badge" width="36" height="14"></canvas>
+        <div class="vs-label foe-class" id="vs-foe-class">TRAINER</div>
+      </div>
+      <canvas class="vs-portrait" id="vs-foe-portrait" width="96" height="96"></canvas>
+      <div class="vs-name" id="vs-foe-name">adpow-7283</div>
+      <div class="vs-sub" id="vs-foe-sub">eBay Seller<br>3,241 feedback (99.8%)</div>
+    </div>
+    <div class="vs-big">VS</div>
+    <div>
+      <div class="vs-label player-class">COLLECTOR</div>
+      <canvas class="vs-portrait" id="vs-player-portrait" width="96" height="96"></canvas>
+      <div class="vs-name">@fletchketchem</div>
+      <div class="vs-sub">Team Rocket BHN<br>Lv99 Trader</div>
+    </div>
+  </div>
+  <div id="vs-dialog"><span id="vs-dialog-typed"></span></div>
+</div>
+<div id="flash-overlay" class="overlay"></div>
+<div id="toast"></div>
+
+<script>
+/* =========================================================================
+   POKEMON: BLACKHOLE — Phase 1 logic
+   Hardcoded demo data. No live connections. Audio off by default.
+   Phase 2 swap point: CARD_DATA object below.
+   ========================================================================= */
+
+const CARD_DATA = {
+  card_name: "Dark Persian",
+  set: "Team Rocket",
+  card_number: "42/82",
+  edition: "1st Edition",
+  grader: "CGC",
+  grade: 9.5,
+  label_variant: "cgc_blue_label_legacy",
+  listed_price: 52,
+  market_avg_90day: 110,
+  market_avg_7yr: 95,
+  ath: 165,
+  hp_percent: 47,
+  alert_tier: 1,
+  trigger_type: "recase_arbitrage",
+  seller_username: "adpow-7283",
+  seller_feedback: 3241,
+  seller_platform: "eBay",
+  listing_url: "https://ebay.com/itm/example",
+  set_appreciation_1m: 5,
+  set_appreciation_3m: 12,
+  set_appreciation_6m: 20,
+  set_appreciation_12m: 35,
+  card_appreciation_1m: 8,
+  card_appreciation_3m: 18,
+  card_appreciation_6m: 28,
+  card_appreciation_12m: 45,
+  pop_psa_10: 12,
+  pop_psa_95: 23,
+  pop_psa_9: 41,
+  days_to_sell_avg: 4,
+  recase_cost: 10,
+  net_margin: 48,
+  pokemon_sprite: "Persian",
+  cert_number: "1401008524271"
+};
+
+/* ============ Asset paths — single source of truth ============
+   On-disk filenames keep their Spriters Resource long-form names. If you
+   rename to the brief's frlg_*.png shorthand, update only these constants. */
+const ASSET = {
+  sprites: {
+    // _v8 = cache-bust round 7 (same coords as v4, fresh filenames)
+    persian_front:   "../assets/sprites/v11/persian_front.png",
+    persian_back:    "../assets/sprites/v11/persian_back.png",
+    charizard_front: "../assets/sprites/v11/charizard_front.png",
+    charizard_back:  "../assets/sprites/v11/charizard_back.png",
+    blastoise_front: "../assets/sprites/v11/blastoise_front.png",
+    blastoise_back:  "../assets/sprites/v11/blastoise_back.png",
+    pikachu_front:   "../assets/sprites/v11/pikachu_front.png",
+    pikachu_back:    "../assets/sprites/v11/pikachu_back.png",
+    kadabra_front:   "../assets/sprites/v11/kadabra_front.png",
+    kadabra_back:    "../assets/sprites/v11/kadabra_back.png",
+    gastly_front:    "../assets/sprites/v11/gastly_front.png",
+    gastly_back:     "../assets/sprites/v11/gastly_back.png",
+    magneton_front:  "../assets/sprites/v11/magneton_front.png",
+    magneton_back:   "../assets/sprites/v11/magneton_back.png",
+    magikarp_front:  "../assets/sprites/v11/magikarp_front.png",
+    magikarp_back:   "../assets/sprites/v11/magikarp_back.png",
+    dragonair_front: "../assets/sprites/v11/dragonair_front.png",
+    dragonair_back:  "../assets/sprites/v11/dragonair_back.png",
+    mewtwo_front:    "../assets/sprites/v11/mewtwo_front.png",
+    mewtwo_back:     "../assets/sprites/v11/mewtwo_back.png",
+    rival_throw:     "../assets/sprites/v11/rival_throw.png",
+    red_back:        "../assets/sprites/v11/red_back.png",
+    red_front:       "../assets/sprites/v11/red_front.png",
+    brendan_back_1:  "../assets/sprites/v11/brendan_back_1.png",
+    brendan_back_2:  "../assets/sprites/v11/brendan_back_2.png",
+    brendan_back_3:  "../assets/sprites/v11/brendan_back_3.png",
+    brendan_back_4:  "../assets/sprites/v11/brendan_back_4.png"
+  },
+  audio: {
+    trainer_battle:      "../Music-Sound/1-11. Battle! (Trainer).mp3",
+    trainer_victory:     "../Music-Sound/1-12. Victory! (Trainer).mp3",
+    gym_battle:          "../Music-Sound/1-27. Battle! (Gym Leader).mp3",
+    gym_victory:         "../Music-Sound/1-28. Victory! (Gym Leader).mp3",
+    rival_appears:       "../Music-Sound/1-10. Rival Appears.mp3",
+    // Capture sequence — copy these into POKEMON BLACKHOLE/assets/audio/
+    pokeball_opening:    "../assets/audio/pokeball-opening.mp3",
+    pokeball_wobble:     "../assets/audio/pokeball-wobble.mp3",
+    pokeball_caught:     "../assets/audio/pokeball-caught.mp3",
+    pokemon_catch_music: "../assets/audio/pokemon-catch-music.mp3",
+    pokeball_release:    "../assets/audio/pokeball-release v2.mp3"
+  }
+};
+
+/* Sprite source rects — each processed sprite is its own image, so we draw
+   the entire image (sx/sy=0, sw/sh=image size). Kept in the same shape as
+   before so drawSprite stays simple. */
+const POKEMON_COORDS = {
+  Persian:   { front: {sheet:"persian_front",   sx:0, sy:0, sw:64, sh:64}, back: {sheet:"persian_back",   sx:0, sy:0, sw:64, sh:64} },
+  Charizard: { front: {sheet:"charizard_front", sx:0, sy:0, sw:64, sh:64}, back: {sheet:"charizard_back", sx:0, sy:0, sw:64, sh:64} },
+  Blastoise: { front: {sheet:"blastoise_front", sx:0, sy:0, sw:64, sh:64}, back: {sheet:"blastoise_back", sx:0, sy:0, sw:64, sh:64} },
+  Pikachu:   { front: {sheet:"pikachu_front",   sx:0, sy:0, sw:64, sh:64}, back: {sheet:"pikachu_back",   sx:0, sy:0, sw:64, sh:64} },
+  Kadabra:   { front: {sheet:"kadabra_front",   sx:0, sy:0, sw:64, sh:64}, back: {sheet:"kadabra_back",   sx:0, sy:0, sw:64, sh:64} },
+  Gastly:    { front: {sheet:"gastly_front",    sx:0, sy:0, sw:64, sh:64}, back: {sheet:"gastly_back",    sx:0, sy:0, sw:64, sh:64} },
+  Magneton:  { front: {sheet:"magneton_front",  sx:0, sy:0, sw:64, sh:64}, back: {sheet:"magneton_back",  sx:0, sy:0, sw:64, sh:64} },
+  Magikarp:  { front: {sheet:"magikarp_front",  sx:0, sy:0, sw:64, sh:64}, back: {sheet:"magikarp_back",  sx:0, sy:0, sw:64, sh:64} },
+  Dragonair: { front: {sheet:"dragonair_front", sx:0, sy:0, sw:64, sh:64}, back: {sheet:"dragonair_back", sx:0, sy:0, sw:64, sh:64} },
+  Mewtwo:    { front: {sheet:"mewtwo_front",    sx:0, sy:0, sw:64, sh:64}, back: {sheet:"mewtwo_back",    sx:0, sy:0, sw:64, sh:64} }
+};
+
+/* Pool of demo cards — each rotation shows a different grader/grade/price.
+   sprite key matches POKEMON_COORDS. variant string is internal (drives
+   Pristine→always-★★ detection in getRarityTier). label is display text. */
+const POKEMON_POOL = [
+  { name: 'Dark Persian',        number: '42/82',  sprite: 'Persian',   grader: 'CGC', grade: 9.5, label: 'BLUE LABEL',    variant: 'cgc_blue_label', listed: 52,  market: 110, hp: 47, cert: '1401008524271' },
+  { name: 'Dark Charizard',      number: '21/82',  sprite: 'Charizard', grader: 'PSA', grade: 10,  label: 'GEM MINT',   variant: 'psa_gem_mint',   listed: 1850, market: 2400, hp: 77, cert: '88345219' },
+  { name: 'Dark Blastoise',      number: '20/82',  sprite: 'Blastoise', grader: 'BGS', grade: 9.5, label: 'GOLD LABEL',variant: 'bgs_gold',       listed: 380, market: 520, hp: 73, cert: '0017845321' },
+  { name: "Sabrina's Pikachu",   number: '94/132', sprite: 'Pikachu',   grader: 'SGC', grade: 10,  label: 'PRISTINE',   variant: 'sgc_pristine',   listed: 285, market: 410, hp: 70, cert: '7188492013' },
+  { name: 'Dark Kadabra',        number: '39/82',  sprite: 'Kadabra',   grader: 'TAG', grade: 10,  label: 'PERFECT',  variant: 'tag_perfect',    listed: 42,  market: 95,  hp: 44, cert: 'TAG2024110987' },
+  { name: "Sabrina's Gastly",    number: '96/132', sprite: 'Gastly',    grader: 'CGC', grade: 10,  label: 'PRISTINE',   variant: 'cgc_pristine',   listed: 198, market: 260, hp: 76, cert: '1402301988765' },
+  { name: 'Dark Magneton',       number: '28/82',  sprite: 'Magneton',  grader: 'PSA', grade: 9,   label: 'MINT',        variant: 'psa_mint',       listed: 78,  market: 145, hp: 54, cert: '93782145' },
+  { name: "Giovanni's Magikarp", number: '73/132', sprite: 'Magikarp',  grader: 'SGC', grade: 9.5, label: 'GEM MINT',  variant: 'sgc_gem_mint',   listed: 22,  market: 68,  hp: 32, cert: '7188755012' },
+  { name: 'Dark Dragonair',      number: '33/82',  sprite: 'Dragonair', grader: 'BGS', grade: 10,  label: 'BLACK LABEL',variant: 'bgs_black',      listed: 980, market: 1200,hp: 82, cert: '0018932101' },
+  { name: "Rocket's Mewtwo",     number: '14/82',  sprite: 'Mewtwo',    grader: 'CGC', grade: 10,  label: 'GEM MINT',   variant: 'cgc_gem_mint',   listed: 720, market: 980, hp: 73, cert: '1404209887621' }
+];
+const TRAINER_COORDS = {
+  rival_throw:    { sheet: "rival_throw", sx: 0, sy: 0, sw: 56, sh: 64 }
+};
+const PLAYER_COORDS = {
+  // Brendan is now the player character. Frame 1 = idle, frames 2-4 = throw animation.
+  brendan_idle:    { sheet: "brendan_back_1", sx: 0, sy: 0, sw: 64, sh: 64 },
+  brendan_throw_2: { sheet: "brendan_back_2", sx: 0, sy: 0, sw: 64, sh: 64 },
+  brendan_throw_3: { sheet: "brendan_back_3", sx: 0, sy: 0, sw: 64, sh: 64 },
+  brendan_throw_4: { sheet: "brendan_back_4", sx: 0, sy: 0, sw: 64, sh: 64 },
+  red_back_throw:  { sheet: "red_back",  sx: 0, sy: 0, sw: 64, sh: 64 }, // legacy
+  red_front_vs:    { sheet: "red_front", sx: 0, sy: 0, sw: 56, sh: 80 }
+};
+
+/* ============ Loaded image cache ============ */
+const IMG = {};
+function loadImage(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null); // null = couldn't load; downstream draws are guarded
+    img.src = src;
+  });
+}
+async function preloadSprites() {
+  const keys = Object.keys(ASSET.sprites);
+  await Promise.all(keys.map(async k => { IMG[k] = await loadImage(ASSET.sprites[k]); }));
+}
+
+/* ============ Canvas drawing helpers ============ */
+function clearCanvas(canvas) {
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+function drawSprite(canvas, sheetKey, srcRect, scale, flipX) {
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const sheet = IMG[sheetKey];
+  if (!sheet) return;
+  const dw = srcRect.sw * scale;
+  const dh = srcRect.sh * scale;
+  const dx = (canvas.width  - dw) / 2;
+  const dy = (canvas.height - dh) / 2;
+  ctx.save();
+  if (flipX) { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
+  ctx.drawImage(sheet, srcRect.sx, srcRect.sy, srcRect.sw, srcRect.sh, flipX ? canvas.width - dx - dw : dx, dy, dw, dh);
+  ctx.restore();
+}
+/* Trainer chest badge REMOVED per user spec — grader badges now render on
+   nameplate + VS screen via drawGraderBadgePx() instead. */
+function drawTrainerWithBadge(canvas, sheetKey, srcRect, scale) {
+  drawSprite(canvas, sheetKey, srcRect, scale, false);
+}
+
+/* 32-bit pixel-art grader badge. Renders to any canvas at its current dims.
+   PSA: red/white. CGC: white/red + scales. BGS: gold/black. SGC: black/white.
+   TAG: black/white + inner border. */
+function drawGraderBadgePx(canvas, grader) {
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  const cfg = {
+    PSA:  { bg: '#cc0000', fg: '#ffffff', label: 'PSA' },
+    CGC:  { bg: '#ffffff', fg: '#cc0000', label: 'CGC', border: '#cc0000', icon: 'scales' },
+    BGS:  { bg: '#d4af37', fg: '#000000', label: 'BGS' },
+    SGC:  { bg: '#000000', fg: '#ffffff', label: 'SGC' },
+    TAG:  { bg: '#000000', fg: '#ffffff', label: 'TAG', innerBorder: '#ffffff' },
+    MISC: { bg: '#888888', fg: '#ffffff', label: 'MSC' },
+    RAW:  { bg: '#885533', fg: '#ffffff', label: 'RAW' }
+  };
+  const c = cfg[grader] || cfg.MISC;
+  ctx.fillStyle = c.bg;
+  ctx.fillRect(0, 0, w, h);
+  if (c.border) {
+    ctx.strokeStyle = c.border; ctx.lineWidth = 1;
+    ctx.strokeRect(0.5, 0.5, w - 1, h - 1);
+  }
+  if (c.innerBorder) {
+    ctx.strokeStyle = c.innerBorder; ctx.lineWidth = 1;
+    ctx.strokeRect(2.5, 2.5, w - 5, h - 5);
+  }
+  if (c.icon === 'scales') {
+    ctx.fillStyle = c.fg;
+    // Tiny scales: vertical post + crossbar + two buckets
+    ctx.fillRect(5, 3, 1, 8);
+    ctx.fillRect(2, 4, 7, 1);
+    ctx.fillRect(2, 5, 1, 3); ctx.fillRect(8, 5, 1, 3);
+    ctx.fillRect(2, 7, 7, 1);
+  }
+  ctx.fillStyle = c.fg;
+  const fontSize = Math.max(6, Math.min(8, Math.floor(h * 0.55)));
+  ctx.font = `${fontSize}px "Press Start 2P", monospace`;
+  ctx.textAlign = c.icon ? 'right' : 'center';
+  ctx.textBaseline = 'middle';
+  const tx = c.icon ? w - 3 : w / 2;
+  ctx.fillText(c.label, tx, h / 2 + 1);
+}
+
+/* ============ Pokeball row painter ============ */
+function drawPokeballRow(canvas, filled, total) {
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const gap = 4;
+  const size = 12;
+  for (let i = 0; i < total; i++) {
+    const x = i * (size + gap) + 2;
+    const y = 1;
+    if (i < filled) {
+      ctx.fillStyle = '#cc1010';
+      ctx.fillRect(x, y, size, size / 2);
+      ctx.fillStyle = '#fafaf2';
+      ctx.fillRect(x, y + size / 2, size, size / 2);
+      ctx.fillStyle = '#1a1a20';
+      ctx.fillRect(x, y + size / 2 - 1, size, 2);
+      ctx.fillStyle = '#fafaf2';
+      ctx.fillRect(x + size / 2 - 2, y + size / 2 - 2, 4, 4);
+      ctx.strokeStyle = '#1a1a20';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x, y, size, size);
+    } else {
+      ctx.fillStyle = '#888a9a';
+      ctx.fillRect(x, y, size, size);
+      ctx.strokeStyle = '#5a5a6a';
+      ctx.strokeRect(x, y, size, size);
+    }
+  }
+}
+
+/* ============ Tier / dialog / button logic — HP-driven ============ */
+function getHpColor(pct) {
+  if (pct >= 60) return '#48c848';
+  if (pct >= 40) return '#f8c818';
+  if (pct >= 20) return '#f87018';
+  return '#f83800';
+}
+function getTierInfo(pct) {
+  if (pct >= 85) return { cls: '',              label: 'AT MARKET' };
+  if (pct >= 60) return { cls: 'tier-watch',    label: 'TIER 3 — WATCH' };
+  if (pct >= 40) return { cls: 'tier-buy',      label: 'TIER 2 — BUY' };
+  if (pct >= 20) return { cls: 'tier-strong',   label: 'TIER 1 — STRONG BUY' };
+  return            { cls: 'tier-critical', label: '⚡ TIER 1 — CRITICAL' };
+}
+function getDialogText(card) {
+  const pct = card.hp_percent;
+  const belowPct = Math.max(0, Math.round(100 - pct));
+  const seller = card.seller_username;
+  const name = card.card_name.toUpperCase();
+  // HORIZON narrates all alerts. Trainer-class lines (rival speaking) live in
+  // GRADER_META[*].line and already carry the username prefix.
+  if (pct >= 85) return `HORIZON: ${seller} listed ${name} at market value. No edge here.`;
+  if (pct >= 60) return `HORIZON: ${seller} listed ${name} ${belowPct}% below market. Worth watching.`;
+  if (pct >= 40) return `HORIZON: ${seller} sent out ${name}! Weakened — ${belowPct}% below market avg. Good time to offer.`;
+  if (pct >= 20) return `HORIZON: ${name} is in the RED — ${belowPct}% below market. Recommend BUY. Don't let it escape!`;
+  return `HORIZON: ${name} is at CRITICAL HP! Distressed sale — ${belowPct}% below market. CATCH IT NOW!`;
+}
+function getButtons(pct) {
+  if (pct >= 85) return [
+    { label: 'WATCH', action: 'watch' },
+    { label: 'ANALYZE ↗', action: 'analyze' },
+    { label: 'PASS', action: 'pass' },
+    { label: 'RUN', action: 'run' }
+  ];
+  if (pct >= 60) return [
+    { label: 'OFFER', action: 'offer', primary: true },
+    { label: 'WATCH', action: 'watch' },
+    { label: 'ANALYZE ↗', action: 'analyze' },
+    { label: 'RUN', action: 'run' }
+  ];
+  if (pct >= 40) return [
+    { label: 'BUY IT', action: 'buy', primary: true },
+    { label: 'OFFER', action: 'offer' },
+    { label: 'ANALYZE ↗', action: 'analyze' },
+    { label: 'RUN', action: 'run' }
+  ];
+  if (pct >= 20) return [
+    { label: 'BUY IT ⚡', action: 'buy', primary: true },
+    { label: 'ANALYZE ↗', action: 'analyze' },
+    { label: 'WATCH', action: 'watch' },
+    { label: 'RUN', action: 'run' }
+  ];
+  return [
+    { label: 'CATCH IT', action: 'catch', critical: true },
+    { label: 'BUY IT', action: 'buy', primary: true },
+    { label: 'ANALYZE ↗', action: 'analyze' },
+    { label: 'RUN', action: 'run' }
+  ];
+}
+
+/* =========================================================================
+   Hand-pixeled "POKÉMON: BLACKHOLE" logo — every letter is a 5x7 bitmap
+   rendered as ctx.fillRect blocks. No fonts, no anti-aliasing. The "O" in
+   BLACKHOLE is replaced with a black-hole vortex drawn as filled rings.
+   ========================================================================= */
+const PX_FONT = {
+  'P': ['11110','10001','10001','11110','10000','10000','10000'],
+  'O': ['01110','10001','10001','10001','10001','10001','01110'],
+  'K': ['10001','10010','10100','11000','10100','10010','10001'],
+  'E': ['11111','10000','10000','11110','10000','10000','11111'],
+  'M': ['10001','11011','10101','10101','10001','10001','10001'],
+  'N': ['10001','11001','10101','10101','10101','10011','10001'],
+  'B': ['11110','10001','10001','11110','10001','10001','11110'],
+  'L': ['10000','10000','10000','10000','10000','10000','11111'],
+  'A': ['01110','10001','10001','11111','10001','10001','10001'],
+  'C': ['01111','10000','10000','10000','10000','10000','01111'],
+  'H': ['10001','10001','10001','11111','10001','10001','10001'],
+  'T': ['11111','00100','00100','00100','00100','00100','00100'],
+  'I': ['11111','00100','00100','00100','00100','00100','11111'],
+  'G': ['01111','10000','10000','10111','10001','10001','01110'],
+  'S': ['01111','10000','10000','01110','00001','00001','11110'],
+  ' ': ['00000','00000','00000','00000','00000','00000','00000'],
+  'É': ['00100','01010','00000','11111','10000','11110','11111'],   // approx accent on top
+  ':': ['00000','00000','00100','00000','00000','00100','00000']
+};
+
+function drawPixelText(ctx, text, x, y, block, fill, outline, italic) {
+  const rows = 7;
+  text = text.toUpperCase();
+  let cursorX = x;
+  for (const ch of text) {
+    const glyph = PX_FONT[ch] || PX_FONT[' '];
+    const cols = glyph[0].length;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (glyph[r][c] === '1') {
+          const skew = italic ? Math.floor((rows - r - 1) * 0.35) : 0;
+          const px = cursorX + (c * block) + skew;
+          const py = y + (r * block);
+          // outline pass — 8-neighbor offsets
+          if (outline) {
+            ctx.fillStyle = outline;
+            for (const [dx,dy] of [[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]]) {
+              ctx.fillRect(px + dx, py + dy, block, block);
+            }
+          }
+        }
+      }
+    }
+    cursorX += (cols + 1) * block;
+  }
+  // fill pass (drawn AFTER outline so it sits on top)
+  cursorX = x;
+  for (const ch of text) {
+    const glyph = PX_FONT[ch] || PX_FONT[' '];
+    const cols = glyph[0].length;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (glyph[r][c] === '1') {
+          const skew = italic ? Math.floor((rows - r - 1) * 0.35) : 0;
+          const px = cursorX + (c * block) + skew;
+          const py = y + (r * block);
+          ctx.fillStyle = fill;
+          ctx.fillRect(px, py, block, block);
+        }
+      }
+    }
+    cursorX += (cols + 1) * block;
+  }
+}
+
+function drawBlackHoleGlyph(ctx, x, y, block, fillRing, fillCore) {
+  // Replaces the "O" — 7-tall × 5-wide bitmap pattern
+  const pattern = [
+    '01110',
+    '11221',
+    '12321',
+    '12321',
+    '12321',
+    '11221',
+    '01110'
+  ];
+  for (let r = 0; r < pattern.length; r++) {
+    for (let c = 0; c < pattern[r].length; c++) {
+      const v = pattern[r][c];
+      if (v === '0') continue;
+      let color = v === '1' ? fillRing : (v === '2' ? '#240048' : fillCore);
+      ctx.fillStyle = color;
+      ctx.fillRect(x + c * block, y + r * block, block, block);
+    }
+  }
+}
+
+function drawBlackholeLogo() {
+  const cv = document.getElementById('blackhole-logo');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = '#000010';
+  ctx.fillRect(0, 0, cv.width, cv.height);
+  // POKÉMON row — yellow #FFDD00 fill, blue #1A0080 outline, big italic blocks
+  drawPixelText(ctx, 'POKEMON', 28, 18, 8, '#FFDD00', '#1A0080', true);
+  // BLACKHOLE row — render letter-by-letter so we can replace 'O' with the vortex
+  const word = 'BLACKHOLE';
+  let cx = 28;
+  const block = 8;
+  for (const ch of word) {
+    if (ch === 'O') {
+      // outline ring around black-hole glyph
+      ctx.fillStyle = '#1A0010';
+      for (const [dx,dy] of [[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]]) {
+        ctx.fillRect(cx + dx, 82 + dy, 5 * block, 7 * block);
+      }
+      drawBlackHoleGlyph(ctx, cx, 82, block, '#CC44FF', '#000000');
+    } else {
+      drawPixelText(ctx, ch, cx, 82, block, '#CC44FF', '#1A0010', true);
+    }
+    cx += 6 * block;
+  }
+  // Subtitle "NOTHING ESCAPES THE BLACKHOLE" — smaller block (3px)
+  drawPixelText(ctx, 'NOTHING ESCAPES THE BLACKHOLE', 22, 150, 3, '#a060d0', '#240048', false);
+}
+
+/* ============ 1st Edition stamp ============
+   Proper rubber-stamp design at 28×28: black filled circle, big white "1"
+   centered, "EDITION" arced around the outside top of the circle in BLACK
+   (visible against the white nameplate background). Hand-pixeled curve
+   using PX_FONT for the EDITION characters — each char rotated around the
+   circle perimeter via rotate transform. */
+function draw1stEditionStamp(canvas, edition) {
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  if (!/1st edition/i.test(edition || '')) { canvas.style.display = 'none'; return; }
+  canvas.style.display = '';
+  // Black filled circle in LOWER 2/3 of canvas (leaves room for arc text on top)
+  const r = 9;
+  const cx = w / 2, cy = h - r - 1;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = '#000000';
+  ctx.fill();
+  // White ring inside for rubber-stamp look
+  ctx.beginPath();
+  ctx.arc(cx, cy, r - 1.5, 0, Math.PI * 2);
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 0.7;
+  ctx.stroke();
+  // Big white "1" centered using PX_FONT (5x7 bitmap) at 2px-block scale
+  const oneGlyph = ['00100','01100','00100','00100','00100','00100','01110'];
+  const oneBlock = 2;
+  const oneW = 5 * oneBlock;
+  const oneH = 7 * oneBlock;
+  const ox = cx - oneW / 2, oy = cy - oneH / 2;
+  ctx.fillStyle = '#ffffff';
+  for (let row = 0; row < 7; row++) for (let col = 0; col < 5; col++) {
+    if (oneGlyph[row][col] === '1') ctx.fillRect(ox + col * oneBlock, oy + row * oneBlock, oneBlock, oneBlock);
+  }
+  // "EDITION" arced around outside TOP of circle in BLACK via per-char rotate
+  const text = 'EDITION';
+  const arcRadius = r + 3;
+  const arcSpan = Math.PI * 1.0;
+  const startAngle = -Math.PI / 2 - arcSpan / 2;
+  const charAngle = arcSpan / (text.length - 1);
+  ctx.fillStyle = '#000000';
+  ctx.font = '5px "Press Start 2P", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i < text.length; i++) {
+    const a = startAngle + i * charAngle;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(a + Math.PI / 2);
+    ctx.translate(0, -arcRadius);
+    ctx.fillText(text[i], 0, 0);
+    ctx.restore();
+  }
+}
+
+/* ============ Rarity tier — per-grader pop thresholds ============
+   PSA 10 GM:  ★★ ≤10, ★ 11–50, ◆ 51–200, ● 200+
+   CGC 10 GM:  ★★ ≤5,  ★ 6–20,  ◆ 21–75, ● 75+
+   CGC 10 Pristine: always ★★ regardless of pop
+   Phase 1 demo card is CGC 9.5; CARD_DATA only carries pop_psa_* so we
+   apply PSA thresholds to pop_psa_95 (23 → ★ RARE). Phase 2 should add
+   pop_cgc_* fields so the right ladder picks automatically. */
+function getRarityTier(grader, grade, label, pop) {
+  if (grader === 'CGC' && grade === 10 && /pristine/i.test(label || '')) {
+    return { sym: '★★', cls: 'ultra', label: 'ULTRA RARE' };
+  }
+  const ladders = {
+    PSA: [[10,'★★','ultra','ULTRA RARE'],[50,'★','rare','RARE'],[200,'◆','uncommon','UNCOMMON'],[Infinity,'●','common','COMMON']],
+    CGC: [[5,'★★','ultra','ULTRA RARE'],[20,'★','rare','RARE'],[75,'◆','uncommon','UNCOMMON'],[Infinity,'●','common','COMMON']]
+  };
+  const ladder = ladders[grader] || ladders.PSA;
+  for (const [max, sym, cls, label] of ladder) {
+    if (pop <= max) return { sym, cls, label };
+  }
+}
+
+function renderRarityLine(targetId, card) {
+  const popField = `pop_psa_${String(card.grade).replace('.', '')}`;
+  const pop = card[popField];
+  if (pop == null) { $(targetId).textContent = ''; return; }
+  // Phase 1: pop is always PSA. Use PSA thresholds for the symbol so the
+  // demo reads correctly until pop_cgc_* lands in CARD_DATA.
+  const tier = getRarityTier('PSA', card.grade, card.label_variant, pop);
+  // Format per latest spec: "★ RARE — PSA POP 23"
+  $(targetId).innerHTML =
+    `<span class="sym ${tier.cls}">${tier.sym}</span>` +
+    `<span class="rarity-label">${tier.label}</span>` +
+    `<span class="rarity-sep">—</span>PSA POP ${pop}`;
+}
+
+/* ============ Grader -> trainer class metadata ============ */
+const GRADER_META = {
+  PSA:  { class: 'PSA TRAINER',     color: '#cc0000', badge: 'P', cls: 'psa',
+          line: 'PSA TRAINER {s}: My card has the red label. The most trusted name in the hobby. Think you can afford it?' },
+  CGC:  { class: 'CGC TRAINER',     color: '#0044cc', badge: 'C', cls: 'cgc',
+          line: "CGC TRAINER {s}: CGC certified. Blue label. Gem Mint. This won't last long on the market." },
+  BGS:  { class: 'BECKETT MASTER',  color: '#cc9900', badge: 'B', cls: 'bgs',
+          line: "BECKETT MASTER {s}: Beckett graded this personally. Subgrades don't lie. Are you even qualified to catch this?" },
+  SGC:  { class: 'SGC COLLECTOR',   color: '#444444', badge: 'S', cls: 'sgc',
+          line: 'SGC COLLECTOR {s}: SGC grades harder than you know. This card is worth more than the market thinks.' },
+  TAG:  { class: 'TAG SPECIALIST',  color: '#6633cc', badge: 'T', cls: 'tag',
+          line: "TAG SPECIALIST {s}: AI graded. 1000 point scale. Precision you've never seen. Can your system handle it?" },
+  MISC: { class: 'CARD DEALER',     color: '#888888', badge: 'M', cls: 'misc',
+          line: "CARD DEALER {s}: I've got something here. Don't know what it's worth. Maybe you do." },
+  RAW:  { class: 'RAW TRADER',      color: '#885533', badge: 'R', cls: 'raw',
+          line: 'RAW TRADER {s}: Ungraded. Could be a 10. Could be a 7. One way to find out.' }
+};
+
+/* =========================================================================
+   Audio — Web Audio API with chiptune fallback when mp3s are absent
+   Audio OFF by default. User must click ♪ to enable.
+   ========================================================================= */
+const Audio = {
+  ctx: null,
+  enabled: false,
+  unlocked: false,
+  music: null,        // HTMLAudioElement for looping battle music
+  musicGain: null,
+  sfxBuffers: {},     // cached mp3 buffers
+  pendingMusic: null,
+
+  ensureCtx() {
+    if (!this.ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AC();
+    }
+  },
+  async toggle() {
+    this.enabled = !this.enabled;
+    document.getElementById('audio-toggle').classList.toggle('on', this.enabled);
+    if (this.enabled) {
+      this.ensureCtx();
+      if (this.ctx.state === 'suspended') await this.ctx.resume();
+      this.unlocked = true;
+      if (this.pendingMusic) this.playMusic(this.pendingMusic);
+    } else {
+      this.stopMusic();
+    }
+  },
+
+  /* Square-wave chiptune tone */
+  tone(freq, dur, type='square', vol=0.08, when=0) {
+    if (!this.enabled) return;
+    this.ensureCtx();
+    const t0 = this.ctx.currentTime + when;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(vol, t0 + 0.01);
+    gain.gain.linearRampToValueAtTime(0, t0 + dur);
+    osc.connect(gain).connect(this.ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+  },
+  sequence(notes, gap=0.06, type='square', vol=0.08) {
+    if (!this.enabled) return;
+    let t = 0;
+    notes.forEach(n => {
+      this.tone(n.f, n.d || 0.12, type, vol, t);
+      t += (n.d || 0.12) + gap;
+    });
+  },
+
+  /* High-level SFX hooks — try mp3 first, fall back to chiptune */
+  async sfx(name) {
+    if (!this.enabled) return;
+    const path = ASSET.audio[name];
+    if (path) {
+      const ok = await this.playOneShot(path);
+      if (ok) return;
+    }
+    this.chiptuneFor(name);
+  },
+  chiptuneFor(name) {
+    switch (name) {
+      case 'exclamation':  this.sequence([{f:440,d:0.12},{f:660,d:0.12},{f:880,d:0.24}]); break;
+      case 'flash':        this.sequence([{f:440,d:0.05},{f:880,d:0.05},{f:440,d:0.05},{f:880,d:0.05}], 0.02); break;
+      case 'vs_fanfare':   this.sequence([{f:392,d:0.1},{f:494,d:0.1},{f:587,d:0.1},{f:659,d:0.1},{f:784,d:0.1},{f:880,d:0.1},{f:988,d:0.25}]); break;
+      case 'battle_start': this.sequence([{f:523,d:0.1},{f:659,d:0.1},{f:784,d:0.1},{f:1047,d:0.25}]); break;
+      case 'pokeball_opening': this.tone(660, 0.18, 'square', 0.1); this.tone(440, 0.18, 'square', 0.06, 0.05); break;
+      case 'pokeball_wobble':  this.tone(300, 0.08, 'square', 0.07); this.tone(380, 0.08, 'square', 0.07, 0.08); break;
+      case 'pokeball_caught':  this.sequence([{f:880,d:0.08},{f:1175,d:0.08},{f:1568,d:0.18}]); break;
+      case 'pokemon_catch_music': this.sequence([{f:523,d:0.12},{f:659,d:0.12},{f:784,d:0.12},{f:1047,d:0.12},{f:880,d:0.12},{f:1047,d:0.3}]); break;
+      case 'pokeball_release': this.sequence([{f:660,d:0.1},{f:440,d:0.1},{f:330,d:0.2}]); break;
+      case 'materialize':  this.glide(220, 880, 0.5); break;
+      case 'rival_appears':this.sequence([{f:660,d:0.12},{f:880,d:0.12},{f:1047,d:0.2}]); break;
+      case 'run_away':     this.sequence([{f:330,d:0.12},{f:262,d:0.12},{f:196,d:0.22}]); break;
+      case 'victory':      this.sequence([{f:523,d:0.1},{f:659,d:0.1},{f:784,d:0.1},{f:1047,d:0.1},{f:1319,d:0.3}]); break;
+      case 'critical_alarm': this.tone(880, 0.2, 'square', 0.05); break;
+      case 'click':        this.tone(880, 0.04, 'square', 0.05); break;
+      default: break;
+    }
+  },
+  glide(from, to, dur) {
+    if (!this.enabled) return;
+    this.ensureCtx();
+    const t0 = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(from, t0);
+    osc.frequency.exponentialRampToValueAtTime(to, t0 + dur);
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(0.07, t0 + 0.02);
+    gain.gain.linearRampToValueAtTime(0, t0 + dur);
+    osc.connect(gain).connect(this.ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+  },
+
+  /* Mp3 one-shot via HTMLAudioElement; resolves false if file 404s */
+  playOneShot(src) {
+    return new Promise((resolve) => {
+      const a = new Audio2(src);
+      a.volume = 0.5;
+      a.addEventListener('error', () => resolve(false), { once: true });
+      a.addEventListener('canplay', () => { a.play().then(() => resolve(true)).catch(() => resolve(false)); }, { once: true });
+      // Some browsers fire canplaythrough only; guard with timeout
+      setTimeout(() => resolve(false), 1200);
+    });
+  },
+
+  /* Looping battle music — choose track by alert tier (§12 / §8.2) */
+  pickMusic(card) {
+    return card.alert_tier === 1 ? ASSET.audio.gym_battle : ASSET.audio.trainer_battle;
+  },
+  playMusic(src) {
+    this.pendingMusic = src;
+    if (!this.enabled) return;
+    this.stopMusic();
+    const a = new Audio2(src);
+    a.loop = true;
+    a.volume = 0.35;
+    a.addEventListener('error', () => this.chiptuneMusicLoop());
+    a.play().catch(() => this.chiptuneMusicLoop());
+    this.music = a;
+  },
+  stopMusic() {
+    if (this.music) { try { this.music.pause(); } catch(e){} this.music = null; }
+    if (this._chipMusicTimer) { clearInterval(this._chipMusicTimer); this._chipMusicTimer = null; }
+  },
+  chiptuneMusicLoop() {
+    if (this._chipMusicTimer) clearInterval(this._chipMusicTimer);
+    const motif = [{f:392,d:0.12},{f:466,d:0.12},{f:523,d:0.12},{f:392,d:0.12},{f:330,d:0.12},{f:392,d:0.24}];
+    const play = () => this.sequence(motif, 0.04);
+    play();
+    this._chipMusicTimer = setInterval(() => { if (this.enabled) play(); }, 1700);
+  }
+};
+// Alias to avoid name collision with our Audio object
+const Audio2 = window.Audio;
+
+/* =========================================================================
+   Cutscene controller
+   ========================================================================= */
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+const $ = (id) => document.getElementById(id);
+
+async function setOverlay(id, on) {
+  $(id).classList.toggle('visible', on);
+  await sleep(220);
+}
+async function flashScreen(times, interval) {
+  for (let i = 0; i < times; i++) {
+    $('flash-overlay').classList.add('visible');
+    Audio.sfx('flash');
+    await sleep(interval);
+    $('flash-overlay').classList.remove('visible');
+    await sleep(interval);
+  }
+}
+
+async function typeText(target, text, perChar=22, sfx=true) {
+  const el = $(target);
+  el.textContent = '';
+  for (let i = 0; i < text.length; i++) {
+    el.textContent += text[i];
+    if (sfx && text[i].trim() && i % 2 === 0) Audio.sfx('click');
+    await sleep(perChar);
+  }
+}
+
+/* Trainer walk-in: slide both trainers in from opposite sides simultaneously
+   while holding their battle pose. (Walk-cycle frame swap removed — clean
+   overworld walk-frame coords aren't pinned for this sheet; the throwing
+   pose during slide reads correctly per FRLG-style cutscenes.) */
+async function walkInTrainers() {
+  const foeCanvas = $('foe-trainer');
+  const plyCanvas = $('player-trainer');
+  requestAnimationFrame(() => {
+    foeCanvas.style.transform = 'translateX(0)';
+    plyCanvas.style.transform = 'translateX(0)';
+  });
+  await sleep(1200);
+}
+
+/* VS screen — pixel-art grader badge above foe portrait, full pre-battle
+   dialog line typed and held long enough to read. Player uses Red FRONT
+   sprite per spec (not back). */
+async function showVsScreen() {
+  const grader = GRADER_META[CARD_DATA.grader] || GRADER_META.MISC;
+  $('vs-foe-class').textContent = 'TRAINER';   /* grader identity carried by pixel badge below */
+  $('vs-foe-class').style.color = grader.color;
+  $('vs-foe-name').textContent = CARD_DATA.seller_username;
+  $('vs-foe-sub').innerHTML = `${CARD_DATA.seller_platform} Seller<br>${CARD_DATA.seller_feedback.toLocaleString()} feedback (99.8%)`;
+
+  drawSprite($('vs-foe-portrait'), TRAINER_COORDS.rival_throw.sheet, TRAINER_COORDS.rival_throw, 1.5, false);
+  drawSprite($('vs-player-portrait'), PLAYER_COORDS.red_front_vs.sheet, PLAYER_COORDS.red_front_vs, 1.2, false);
+  drawGraderBadgePx($('vs-foe-grader-badge'), CARD_DATA.grader);
+
+  $('vs-overlay').classList.add('visible');
+  Audio.sfx('vs_fanfare');
+  await sleep(1800);
+
+  const line = grader.line.replace('{s}', CARD_DATA.seller_username);
+  await typeText('vs-dialog-typed', line, 22, true);
+  await sleep(2400); // hold long enough to read the full line
+
+  $('vs-overlay').classList.remove('visible');
+}
+
+/* Pokeball throw — parabolic arc (GBA-style), then Pokemon materializes. */
+function pokeballArc(fromX, fromY, toX, toY, dur=620) {
+  const ball = $('pokeball-fly');
+  ball.style.transition = 'none';
+  ball.style.transform = 'rotate(0deg)';
+  ball.style.left = fromX + 'px';
+  ball.style.top  = fromY + 'px';
+  ball.style.opacity = '1';
+  const peakY = Math.min(fromY, toY) - 70;
+  const start = performance.now();
+  return new Promise(resolve => {
+    function frame(t) {
+      const p = Math.min(1, (t - start) / dur);
+      const x = fromX + (toX - fromX) * p;
+      const y = (1 - p) * (1 - p) * fromY + 2 * (1 - p) * p * peakY + p * p * toY;
+      ball.style.left = x + 'px';
+      ball.style.top  = y + 'px';
+      ball.style.transform = 'rotate(' + (p * 720) + 'deg)';
+      if (p < 1) requestAnimationFrame(frame); else resolve();
+    }
+    requestAnimationFrame(frame);
+  });
+}
+
+/* Animate trainer's throw — cycle through the 4 frames during the arc */
+function animateTrainerThrow(canvasId, frames) {
+  const canvas = $(canvasId);
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i >= frames.length) { clearInterval(interval); return; }
+    const f = frames[i++];
+    drawSprite(canvas, f.sheet, f, 1.3, false);
+  }, 110);
+  return interval;
+}
+
+async function pokeballAndMaterialize(canvasId, fromX, fromY, toX, toY, flipX) {
+  // If this is the player's pokeball, animate Brendan's throw frames
+  if (canvasId === 'player-pokemon') {
+    animateTrainerThrow('player-trainer', [
+      PLAYER_COORDS.brendan_throw_2,
+      PLAYER_COORDS.brendan_throw_3,
+      PLAYER_COORDS.brendan_throw_4,
+      PLAYER_COORDS.brendan_throw_4
+    ]);
+  }
+  Audio.sfx('pokeball_opening');
+  await pokeballArc(fromX, fromY, toX, toY);
+
+  const ball = $('pokeball-fly');
+  ball.style.opacity = '0';
+  ball.style.transform = 'rotate(0deg)';
+  Audio.sfx('materialize');
+
+  // Materialize Pokemon — fade in + slight pop
+  const target = $(canvasId);
+  target.style.opacity = '0';
+  target.style.transform = (flipX ? 'scaleX(-1) ' : '') + 'scale(0.4)';
+  await sleep(30);
+  target.style.transition = 'opacity 0.4s ease-out, transform 0.5s cubic-bezier(.2,.9,.3,1.3)';
+  target.style.opacity = '1';
+  target.style.transform = (flipX ? 'scaleX(-1) ' : '') + 'scale(1)';
+  await sleep(550);
+  target.classList.add('float');
+  target.style.transition = '';
+}
+
+/* HP bar animate to target value */
+function setHpBar(card) {
+  const fill = $('foe-hp-fill');
+  fill.style.background = getHpColor(card.hp_percent);
+  // force a layout flush so width transition triggers from 0
+  fill.offsetWidth;
+  fill.style.width = card.hp_percent + '%';
+  if (card.hp_percent < 20) {
+    fill.classList.add('critical');
+    $('foe-pokemon').classList.add('critical');
+    Audio.sfx('critical_alarm');
+  }
+
+  // Player HP — collection health, hardcoded 88% per spec (880/1000)
+  $('player-hp-fill').style.width = '88%';
+  $('exp-fill').style.width = '62%';
+}
+
+/* Tier badge + dialog text + action buttons — populate from CARD_DATA */
+function renderDialogAndButtons(card) {
+  const tier = getTierInfo(card.hp_percent);
+  const badge = $('tier-badge-top');
+  badge.className = ''; // reset
+  if (tier.cls) badge.classList.add(tier.cls);
+  badge.textContent = tier.label;
+
+  // Buttons
+  const container = $('action-buttons');
+  container.innerHTML = '';
+  const buttons = getButtons(card.hp_percent);
+  buttons.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = 'action-btn' + (b.primary ? ' primary' : '') + (b.critical ? ' critical' : '');
+    btn.textContent = b.label;
+    btn.addEventListener('click', () => handleAction(b.action));
+    container.appendChild(btn);
+  });
+}
+
+/* Type out main dialog (post-cutscene) */
+async function typeMainDialog(text) {
+  await typeText('dialog-typed', text, 26, true);
+  $('action-buttons').classList.add('visible');
+}
+
+/* =========================================================================
+   Action handlers
+   ========================================================================= */
+function toast(message, persist=false) {
+  const t = $('toast');
+  t.innerHTML = message;
+  t.classList.add('visible');
+  if (!persist) setTimeout(() => t.classList.remove('visible'), 2600);
+}
+
+/* --- Capture sequence primitives ----------------------------------------- */
+
+/* Play an mp3 from ASSET.audio[name] and resolve when it finishes (or after
+   maxMs as a safety). If audio is off or the mp3 fails, fall back to a
+   chiptune blip plus a fixed delay so the visual timing still chains. */
+function playClipAndWait(name, maxMs=4000) {
+  if (!Audio.enabled) return sleep(380);
+  const path = ASSET.audio[name];
+  if (!path) { Audio.chiptuneFor(name); return sleep(320); }
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = () => { if (!done) { done = true; resolve(); } };
+    const a = new Audio2(path);
+    a.volume = 0.55;
+    a.addEventListener('ended', finish, { once: true });
+    a.addEventListener('error', () => { Audio.chiptuneFor(name); setTimeout(finish, 320); }, { once: true });
+    a.play().catch(() => { Audio.chiptuneFor(name); setTimeout(finish, 320); });
+    setTimeout(finish, maxMs);
+  });
+}
+
+async function flyBallToFoe() {
+  const ball = $('pokeball-fly');
+  const foe  = $('foe-pokemon');
+  const scene = $('battle-scene');
+  // Static layout position of foe canvas (immune to float animation jitter)
+  const landX = foe.offsetLeft + foe.offsetWidth / 2 - 9;
+  const landY = foe.offsetTop  + foe.offsetHeight * 0.55;
+  ball.classList.remove('wobbling', 'caught-flash');
+  ball.style.transition = 'none';
+  ball.style.transform = 'rotate(0deg)';
+  ball.style.left = '80px';
+  ball.style.top  = (scene.offsetHeight - 60) + 'px';
+  ball.style.opacity = '1';
+  await sleep(20);
+  ball.style.transition = 'left 0.5s ease-out, top 0.5s cubic-bezier(.36,-0.4,.5,1.4)';
+  ball.style.left = landX + 'px';
+  ball.style.top  = landY + 'px';
+  await sleep(520);
+}
+
+async function pullFoeIntoBall() {
+  const foe = $('foe-pokemon');
+  foe.classList.remove('float', 'critical');
+  foe.style.transition = 'transform 0.35s ease-in, opacity 0.35s ease-in';
+  foe.style.transform = 'scale(0.1)';
+  foe.style.opacity = '0';
+  await sleep(360);
+}
+
+async function releaseFoeFromBall() {
+  const foe = $('foe-pokemon');
+  foe.style.transition = 'transform 0.45s cubic-bezier(.2,.9,.3,1.3), opacity 0.35s ease-out';
+  foe.style.transform = 'scale(1)';
+  foe.style.opacity = '1';
+  await sleep(480);
+  foe.classList.add('float');
+  foe.style.transition = '';
+}
+
+async function wobbleBall() {
+  const ball = $('pokeball-fly');
+  ball.classList.remove('wobbling');
+  void ball.offsetWidth; // force reflow so animation restarts cleanly
+  ball.classList.add('wobbling');
+  await playClipAndWait('pokeball_wobble', 700);
+  await sleep(120); // tail-off before next wobble
+  ball.classList.remove('wobbling');
+}
+
+/* --- Full sequences ------------------------------------------------------ */
+
+async function buyItSequence() {
+  Audio.stopMusic();
+  await flyBallToFoe();
+  await playClipAndWait('pokeball_opening', 1500);
+  await pullFoeIntoBall();
+  const wobbles = 1 + Math.floor(Math.random() * 2); // 1 or 2
+  for (let i = 0; i < wobbles; i++) await wobbleBall();
+  const ball = $('pokeball-fly');
+  ball.classList.add('caught-flash');
+  await playClipAndWait('pokeball_caught', 1200);
+  await sleep(1000 + Math.random() * 1000); // 1–2s gap per spec
+  ball.classList.remove('caught-flash');
+  await playClipAndWait('pokemon_catch_music', 6000);
+}
+
+async function offerRejectedSequence() {
+  await flyBallToFoe();
+  await playClipAndWait('pokeball_opening', 1500);
+  await pullFoeIntoBall();
+  await wobbleBall();
+  await playClipAndWait('pokeball_release', 1200);
+  const ball = $('pokeball-fly');
+  ball.style.transition = 'opacity 0.3s';
+  ball.style.opacity = '0';
+  await releaseFoeFromBall();
+}
+
+async function offerPendingSequence() {
+  await flyBallToFoe();
+  await playClipAndWait('pokeball_opening', 1500);
+  await pullFoeIntoBall();
+  await wobbleBall();
+  // Ball sits. Cliffhanger — deliberately no resolution.
+}
+
+/* --- Click handler ------------------------------------------------------- */
+
+let actionLocked = false;
+function lockActions(locked) {
+  actionLocked = locked;
+  $('action-buttons').classList.toggle('locked', locked);
+}
+
+async function handleAction(action) {
+  if (actionLocked) return;
+  Audio.sfx('click');
+  const c = CARD_DATA;
+  switch (action) {
+    case 'buy':
+    case 'catch': {
+      lockActions(true);
+      await buyItSequence();
+      const verb = action === 'catch' ? 'CATCH' : 'BUY';
+      toast(`<strong>${verb} confirmed.</strong><br>${c.card_name} ${c.card_number} — ${c.grader} ${c.grade}<br>Listed $${c.listed_price} &nbsp; Market $${c.market_avg_90day} &nbsp; Net ~$${c.net_margin}<br><br>Phase 3 will open the eBay listing.`, true);
+      // Battle over — actions stay locked
+      break;
+    }
+    case 'offer': {
+      lockActions(true);
+      const rejected = Math.random() < 0.5;
+      if (rejected) {
+        await offerRejectedSequence();
+        toast(`OFFER auto-rejected — seller wants closer to market avg ($${c.market_avg_90day}).<br>Pokemon broke free.`);
+        lockActions(false); // can try again
+      } else {
+        await offerPendingSequence();
+        toast(`OFFER pending — ball wobbles, seller hasn't responded.<br>Phase 3 dispatches via HORIZON.`, true);
+        // Cliffhanger — leave locked
+      }
+      break;
+    }
+    case 'watch':
+      toast(`${c.card_name} added to deal_watchlist.<br>HORIZON will re-alert on price movement.`);
+      break;
+    case 'pass':
+      toast('Listing dismissed. No edge here.');
+      break;
+    case 'analyze':
+      toast('Opening eBay listing...');
+      try { window.open(c.listing_url, '_blank', 'noopener'); } catch(e) {}
+      break;
+    case 'run': {
+      lockActions(true);
+      Audio.stopMusic();
+      Audio.sfx('run_away');
+      $('foe-pokemon').classList.add('faint');
+      $('player-pokemon').classList.add('faint');
+      toast('Got away safely.');
+      break;
+    }
+    default: break;
+  }
+}
+
+/* =========================================================================
+   Cert + eBay button bar — grader-specific, shows only relevant grader's
+   cert lookup button + an eBay listing button.
+   ========================================================================= */
+const CERT_LOOKUP = {
+  PSA: (c) => `https://www.psacard.com/cert/${c}`,
+  CGC: (c) => `https://www.cgccards.com/certlookup/${c}`,
+  BGS: (c) => `https://www.beckett.com/grading/card-lookup?cert=${c}`,
+  SGC: (c) => `https://gosgc.com/lookup/${c}`,
+  TAG: (c) => `https://my.taggrading.com/card/${c}`
+};
+const CERT_ICON = { PSA: '🔴', CGC: '🔵', BGS: '🟡', SGC: '⚫', TAG: '🟣', MISC: '⚪', RAW: '🟤' };
+function renderCertBar() {
+  const bar = $('cert-bar');
+  bar.innerHTML = '';
+  const grader = CARD_DATA.grader;
+  const cert = CARD_DATA.cert_number;
+  const icon = CERT_ICON[grader] || '⚪';
+  const url = (CERT_LOOKUP[grader] || (() => '#'))(cert);
+  const certBtn = document.createElement('a');
+  certBtn.className = 'cert-btn ' + (grader || 'misc').toLowerCase();
+  certBtn.href = url;
+  certBtn.target = '_blank';
+  certBtn.rel = 'noopener';
+  certBtn.innerHTML = `${icon} ${grader} CERT #${cert}`;
+  bar.appendChild(certBtn);
+  const ebayBtn = document.createElement('a');
+  ebayBtn.className = 'cert-btn ebay';
+  ebayBtn.href = CARD_DATA.listing_url || '#';
+  ebayBtn.target = '_blank';
+  ebayBtn.rel = 'noopener';
+  ebayBtn.innerHTML = `🛒 eBay LISTING`;
+  bar.appendChild(ebayBtn);
+}
+
+/* =========================================================================
+   Skip — jumps directly to battle-ready state, bypassing the cutscene.
+   ========================================================================= */
+let cutsceneAborted = false;
+function skipCutscene() {
+  cutsceneAborted = true;
+  ['black-overlay','exclamation-overlay','vs-overlay','flash-overlay'].forEach(id => {
+    $(id).classList.remove('visible');
+  });
+  $('foe-trainer').style.transform   = 'translateX(280%)';
+  $('player-trainer').style.transform = 'translateX(-280%)';
+  $('foe-pokemon').style.opacity   = '1';
+  $('player-pokemon').style.opacity = '1';
+  $('foe-pokemon').classList.add('float');
+  $('player-pokemon').classList.add('float');
+  $('foe-stat-box').classList.add('visible');
+  $('player-stat-box').classList.add('visible');
+  $('action-buttons').classList.add('visible');
+  setHpBar(CARD_DATA);
+  $('dialog-typed').textContent = getDialogText(CARD_DATA);
+}
+
+/* =========================================================================
+   Timeframe toggle + comp count + COMPS bar — all bound to the same window
+   ========================================================================= */
+const COMPS_BY_TF  = { '1m': 14, '3m': 47, '6m': 112, '12m': 218 };  // count of comps in that window
+const DATASET_BY_TF= { '1m': 240, '3m': 540, '6m': 820, '12m': 1000 }; // confidence index out of 1000
+
+function setupTimeframeToggle() {
+  document.querySelectorAll('.timeframe-toggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.timeframe-toggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      applyTimeframe(btn.dataset.tf);
+    });
+  });
+}
+function applyTimeframe(tf) {
+  const setPct  = CARD_DATA['set_appreciation_'  + tf];
+  const cardPct = CARD_DATA['card_appreciation_' + tf];
+  const fmt = (v) => v == null ? '—' : (v >= 0 ? '+' : '') + v + '%';
+  $('tr-set-pct').textContent = fmt(setPct);
+  $('card-pct').textContent   = fmt(cardPct);
+  // Comp count text removed per user; data lives in COMPS bar readout only
+  // COMPS bar (was EXP) — fills proportional to dataset confidence; numeric readout in label
+  const data = DATASET_BY_TF[tf] ?? 0;
+  $('exp-fill').style.width = (data / 10) + '%';
+  $('comps-readout').textContent = `${data} / 1000`;
+}
+
+/* =========================================================================
+   Editable cost stack — eBay fees / shipping / admin → real-time Net
+   Net = Spread − Admin − (Listed × fees%) − Shipping
+   ========================================================================= */
+function setupCostEditor() {
+  ['cost-fees', 'cost-ship', 'cost-admin'].forEach(id => {
+    $(id).addEventListener('input', recomputeNet);
+  });
+  recomputeNet();
+}
+function recomputeNet() {
+  const fees  = parseFloat($('cost-fees').value)  || 0;
+  const ship  = parseFloat($('cost-ship').value)  || 0;
+  const admin = parseFloat($('cost-admin').value) || 0;
+  const listed = CARD_DATA.listed_price;
+  const market = CARD_DATA.market_avg_90day;
+  const spread = market - listed;
+  const feeAmt = listed * (fees / 100);
+  const net = spread - admin - feeAmt - ship;
+  // Keep the three static cells synced with CARD_DATA every recompute,
+  // so a pool rotation cascades through the entire cost chain.
+  $('stat-listed').textContent = '$' + listed;
+  $('stat-mkt').textContent    = '$' + market;
+  $('stat-spread').textContent = (spread >= 0 ? '+$' : '-$') + Math.abs(spread);
+  $('cost-net').textContent    = (net >= 0 ? '~$' : '-$') + Math.abs(Math.round(net));
+}
+
+/* =========================================================================
+   Cycle test mode — T cycles grader, H cycles HP tier, R resets to original
+   ========================================================================= */
+const ORIGINAL_CARD = JSON.parse(JSON.stringify(CARD_DATA));
+const GRADER_CYCLE = ['PSA', 'CGC', 'BGS', 'SGC', 'TAG'];
+const HP_CYCLE = [95, 70, 50, 30, 15]; // AT MARKET / WATCH / BUY / STRONG BUY / CRITICAL
+let cycleGraderIdx = 0;
+let cycleHpIdx = 0;
+
+function setupCycleTestMode() {
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    const k = e.key.toLowerCase();
+    if (k === 't') {
+      cycleGraderIdx = (cycleGraderIdx + 1) % GRADER_CYCLE.length;
+      CARD_DATA.grader = GRADER_CYCLE[cycleGraderIdx];
+      applyCardChanges();
+      toast(`Grader: ${CARD_DATA.grader}`);
+    } else if (k === 'h') {
+      cycleHpIdx = (cycleHpIdx + 1) % HP_CYCLE.length;
+      CARD_DATA.hp_percent = HP_CYCLE[cycleHpIdx];
+      applyCardChanges();
+      toast(`HP: ${CARD_DATA.hp_percent}%`);
+    } else if (k === 'r') {
+      Object.assign(CARD_DATA, JSON.parse(JSON.stringify(ORIGINAL_CARD)));
+      cycleGraderIdx = 0; cycleHpIdx = 0;
+      applyCardChanges();
+      toast('Reset to original');
+    }
+  });
+}
+
+function applyCardChanges() {
+  // Re-render everything that depends on CARD_DATA
+  drawGraderBadgePx($('foe-grader-badge'), CARD_DATA.grader);
+  drawGraderBadgePx($('vs-foe-grader-badge'), CARD_DATA.grader);
+  draw1stEditionStamp($('foe-first-ed'), CARD_DATA.edition);
+  renderCertBar();
+  renderDialogAndButtons(CARD_DATA);
+  renderRarityLine('foe-rarity', CARD_DATA);
+  $('dialog-typed').textContent = getDialogText(CARD_DATA);
+  // HP bar
+  const fill = $('foe-hp-fill');
+  fill.style.background = getHpColor(CARD_DATA.hp_percent);
+  fill.style.width = CARD_DATA.hp_percent + '%';
+  fill.classList.toggle('critical', CARD_DATA.hp_percent < 20);
+  $('foe-pokemon').classList.toggle('critical', CARD_DATA.hp_percent < 20);
+}
+
+/* =========================================================================
+   START menu — FRLG-style popup. Phase 1 stubs; QUIT closes the menu.
+   ========================================================================= */
+function toggleStartMenu() {
+  const menu = $('start-menu');
+  const open = menu.classList.toggle('open');
+  menu.setAttribute('aria-hidden', open ? 'false' : 'true');
+  Audio.sfx('click');
+}
+function handleStartMenuItem(action) {
+  Audio.sfx('click');
+  switch (action) {
+    case 'pokedex': toast('POKEDEX — collection tracker (Phase 2).'); break;
+    case 'pokemon': toast('POKEMON — active inventory view (Phase 2).'); break;
+    case 'bag':     toast('BAG — graded slabs, supplies, pending grades (Phase 2).'); break;
+    case 'save':    toast('SAVE — write state snapshot to eventhorizon (Phase 2).'); break;
+    case 'quit':    $('start-menu').classList.remove('open'); $('start-menu').setAttribute('aria-hidden', 'true'); break;
+  }
+}
+
+/* =========================================================================
+   Boot sequence
+   ========================================================================= */
+async function init() {
+  // Random pool pick — swap card name, sprite, grader, grade, label, prices, cert
+  const pick = POKEMON_POOL[Math.floor(Math.random() * POKEMON_POOL.length)];
+  Object.assign(CARD_DATA, {
+    card_name:        pick.name,
+    card_number:      pick.number,
+    pokemon_sprite:   pick.sprite,
+    grader:           pick.grader,
+    grade:            pick.grade,
+    label_variant:    pick.variant,
+    listed_price:     pick.listed,
+    market_avg_90day: pick.market,
+    hp_percent:       pick.hp,
+    cert_number:      pick.cert
+  });
+  // Update nameplate text driven by the pick
+  document.querySelector('#foe-stat-box .stat-name').textContent = pick.name.toUpperCase();
+  document.querySelector('#foe-stat-box .stat-grader-label').textContent = pick.label;
+  document.querySelector('#foe-stat-box .stat-level').textContent = 'Lv' + pick.grade;
+  $('foe-hp-numbers').textContent = `$${pick.listed} / $${pick.market}`;
+  // cert text removed from stat box per spec — cert lives in the button below only
+  // HP bar fill + recompute Net + cascade Listed/Mkt/Spread cells immediately.
+  // (setupCostEditor below will also call recomputeNet, but doing it here too
+  // keeps the displayed numbers consistent during init order.)
+
+  // Audio toggle wiring
+  document.getElementById('audio-toggle').addEventListener('click', () => Audio.toggle());
+  // Skip button — jumps to battle-ready
+  document.getElementById('skip-button').addEventListener('click', skipCutscene);
+
+  // START menu wiring
+  $('start-button').addEventListener('click', toggleStartMenu);
+  document.querySelectorAll('.start-menu-item').forEach(btn => {
+    btn.addEventListener('click', () => handleStartMenuItem(btn.dataset.action));
+  });
+
+  // Cycle test mode — T/H/R keyboard shortcuts
+  setupCycleTestMode();
+  // Timeframe toggle on pop bar
+  setupTimeframeToggle();
+  // Editable cost stack
+  setupCostEditor();
+
+  // Static UI state
+  renderDialogAndButtons(CARD_DATA);
+  drawPokeballRow($('foe-pokeballs'), 3, 6);
+  drawPokeballRow($('player-pokeballs'), 4, 6);
+
+  // Pre-populate dialog so it's never empty between cutscene steps.
+  // Cutscene will type over this; this guarantees a visible string at all times.
+  $('dialog-typed').textContent = getDialogText(CARD_DATA);
+
+  await preloadSprites();
+
+  // Phase 1: hardcoded Persian — front for foe, back for player, both 3x
+  const coords = POKEMON_COORDS[CARD_DATA.pokemon_sprite] || POKEMON_COORDS.Persian;
+  drawSprite($('foe-pokemon'), coords.front.sheet, coords.front, 3, false);
+  // Player Pokemon: flipX=true per user explicit confirmation — faces LEFT toward foe
+  drawSprite($('player-pokemon'), coords.back.sheet,  coords.back,  3, true);
+
+  // ── DIAGNOSTIC ── prove which sprite file actually loaded
+  const backImg = IMG['persian_back'];
+  const dbgMsg = backImg
+    ? `LOADED ${ASSET.sprites.persian_back} (${backImg.naturalWidth}x${backImg.naturalHeight}) flipX=true`
+    : `FAILED to load ${ASSET.sprites.persian_back}`;
+  console.log('[Blackhole v11]', dbgMsg);
+  const dbgEl = document.getElementById('sprite-debug');
+  if (dbgEl) dbgEl.textContent = dbgMsg;
+
+  // Pre-render trainers at start position (offscreen). Scale 1.3x → ~73x83 sprite within 80x96 canvas.
+  drawSprite($('foe-trainer'), TRAINER_COORDS.rival_throw.sheet, TRAINER_COORDS.rival_throw, 1.3, false);
+  drawSprite($('player-trainer'), PLAYER_COORDS.brendan_idle.sheet, PLAYER_COORDS.brendan_idle, 1.3, false);
+
+  // Pixel-art grader badge on the nameplate
+  drawGraderBadgePx($('foe-grader-badge'), CARD_DATA.grader);
+  // Badge showcase — render all 5 designs so you can eyeball them
+  ['PSA','CGC','BGS','SGC','TAG'].forEach(g => drawGraderBadgePx($('badge-' + g.toLowerCase()), g));
+  // Hand-pixeled POKÉMON: BLACKHOLE logo in the right-side panel
+  drawBlackholeLogo();
+  // 1st Edition stamp (conditional on edition field)
+  draw1stEditionStamp($('foe-first-ed'), CARD_DATA.edition);
+
+  // Rarity line
+  renderRarityLine('foe-rarity', CARD_DATA);
+
+  // Cert lookup + eBay button bar
+  renderCertBar();
+
+  // ACTION BUTTONS + STAT BOXES visible immediately — never hidden by cutscene failure
+  $('action-buttons').classList.add('visible');
+  $('foe-stat-box').classList.add('visible');
+  $('player-stat-box').classList.add('visible');
+
+  // Begin cutscene
+  runCutscene().finally(() => {
+    // Guarantee end-state even if cutscene errors partway: buttons + stat boxes
+    // visible, trainers slid off so they don't block the player area as a black blob
+    $('action-buttons').classList.add('visible');
+    $('foe-stat-box').classList.add('visible');
+    $('player-stat-box').classList.add('visible');
+    $('foe-trainer').style.transform = 'translateX(280%)';
+    $('player-trainer').style.transform = 'translateX(-280%)';
+    $('foe-pokemon').style.opacity = '1';
+    $('player-pokemon').style.opacity = '1';
+    $('foe-pokemon').classList.add('float');
+    $('player-pokemon').classList.add('float');
+  });
+}
+
+async function runCutscene() {
+  // Step 1: black screen (already visible)
+  await sleep(300);
+
+  // Step 2: exclamation
+  $('black-overlay').classList.remove('visible');
+  $('exclamation-overlay').classList.add('visible');
+  Audio.sfx('rival_appears');
+  Audio.sfx('exclamation');
+  await sleep(1400);
+  $('exclamation-overlay').classList.remove('visible');
+
+  // Step 3: flash x3
+  await flashScreen(3, 80);
+
+  // Step 4–5: trainer walk-in + lock eyes
+  await walkInTrainers();
+  await sleep(500);
+
+  // Step 6–7: VS screen + class dialog
+  await showVsScreen();
+
+  // Step 8: flash x5
+  await flashScreen(5, 60);
+
+  // Step 9: arena loads — stat boxes slide in (pokeballs are inside them, ride along)
+  Audio.sfx('battle_start');
+  $('foe-stat-box').classList.add('visible');
+  await sleep(180);
+  $('player-stat-box').classList.add('visible');
+  await sleep(400);
+
+  // Step 10: pokeball throw — foe then player; each trainer walks off after their throw
+  const scene = $('battle-scene');
+  const foeStartX = scene.offsetWidth - 120;
+  const foeStartY = 130;
+  const foeLandX  = scene.offsetWidth - 160;
+  const foeLandY  = 140;
+  await pokeballAndMaterialize('foe-pokemon', foeStartX, foeStartY, foeLandX, foeLandY, false);
+  // Foe trainer walks off to the right
+  $('foe-trainer').style.transform = 'translateX(180%)';
+
+  const plyStartX = 60;
+  const plyStartY = scene.offsetHeight - 80;
+  const plyLandX  = 90;
+  const plyLandY  = scene.offsetHeight - 50;
+  await pokeballAndMaterialize('player-pokemon', plyStartX, plyStartY, plyLandX, plyLandY, false);
+  // Player trainer walks off to the left
+  $('player-trainer').style.transform = 'translateX(-180%)';
+  await sleep(400); // let walk-off finish before HP bar animates
+
+  // Step 11: HP bars animate (foe already mounted; fill from 0 -> target)
+  setHpBar(CARD_DATA);
+  Audio.playMusic(Audio.pickMusic(CARD_DATA));
+  await sleep(1000);
+
+  // Step 12: dialog types out (HORIZON narrator prefix)
+  const intro = `HORIZON: ${CARD_DATA.seller_username} sent out ${CARD_DATA.card_name.toUpperCase()}!`;
+  await typeMainDialog(intro);
+  await sleep(700);
+
+  // After intro: replace with HP-driven recommendation text
+  await typeText('dialog-typed', getDialogText(CARD_DATA), 22, true);
+}
+
+/* Start once fonts are ready-ish; don't block forever if Google Fonts is slow */
+window.addEventListener('DOMContentLoaded', () => {
+  if (document.fonts && document.fonts.ready) {
+    Promise.race([document.fonts.ready, sleep(800)]).then(init);
+  } else {
+    init();
+  }
+});
+</script>
+
+</body>
+</html>

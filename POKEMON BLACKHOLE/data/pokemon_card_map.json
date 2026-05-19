@@ -1,0 +1,81 @@
+{
+  "_meta": {
+    "description": "Card name -> Pokemon sprite sheet coordinates. Phase 1 ships with the demo card only; Phase 2 populates from inventory.",
+    "sheets": {
+      "frlg_pokemon_sheet.png": "Spriters Resource: Pokemon FireRed/LeafGreen Gen 1 sprite sheet",
+      "frlg_pokemon_sheet_gen2.png": "Spriters Resource: Pokemon FireRed/LeafGreen Gen 2 sprite sheet"
+    },
+    "coord_system": "sx/sy = top-left pixel on source sheet. sw/sh = source crop size. Sprites rendered at 3x scale.",
+    "tuning_note": "Coordinates derived from brief §7.1 grid (1-indexed row*col * 64). Re-measure from the actual sheet if a Pokemon prints offset."
+  },
+  "Dark Persian": {
+    "pokemon": "Persian",
+    "dex_number": 53,
+    "sheet": "frlg_pokemon_sheet.png",
+    "front": { "sx": 512, "sy": 256, "sw": 64, "sh": 64 },
+    "back":  { "sx": 512, "sy": 320, "sw": 64, "sh": 64 }
+  },
+  "Dark Kadabra": {
+    "pokemon": "Kadabra",
+    "dex_number": 64,
+    "sheet": "frlg_pokemon_sheet.png",
+    "front": { "sx": 192, "sy": 320, "sw": 64, "sh": 64 },
+    "back":  { "sx": 192, "sy": 384, "sw": 64, "sh": 64 }
+  },
+  "Dark Magneton": {
+    "pokemon": "Magneton",
+    "dex_number": 82,
+    "sheet": "frlg_pokemon_sheet.png",
+    "front": { "sx": 704, "sy": 384, "sw": 64, "sh": 64 },
+    "back":  { "sx": 704, "sy": 448, "sw": 64, "sh": 64 }
+  },
+  "Dark Dragonair": {
+    "pokemon": "Dragonair",
+    "dex_number": 148,
+    "sheet": "frlg_pokemon_sheet.png",
+    "front": { "sx": 448, "sy": 768, "sw": 64, "sh": 64 },
+    "back":  { "sx": 448, "sy": 832, "sw": 64, "sh": 64 }
+  },
+  "Sabrina's Gastly": {
+    "pokemon": "Gastly",
+    "dex_number": 92,
+    "sheet": "frlg_pokemon_sheet.png",
+    "front": { "sx": 704, "sy": 448, "sw": 64, "sh": 64 },
+    "back":  { "sx": 704, "sy": 512, "sw": 64, "sh": 64 }
+  },
+  "Sabrina's Haunter": {
+    "pokemon": "Haunter",
+    "dex_number": 93,
+    "sheet": "frlg_pokemon_sheet.png",
+    "front": { "sx": 768, "sy": 448, "sw": 64, "sh": 64 },
+    "back":  { "sx": 768, "sy": 512, "sw": 64, "sh": 64 }
+  },
+  "Sabrina's Psyduck": {
+    "pokemon": "Psyduck",
+    "dex_number": 54,
+    "sheet": "frlg_pokemon_sheet.png",
+    "front": { "sx": 576, "sy": 256, "sw": 64, "sh": 64 },
+    "back":  { "sx": 576, "sy": 320, "sw": 64, "sh": 64 }
+  },
+  "Giovanni's Magikarp": {
+    "pokemon": "Magikarp",
+    "dex_number": 129,
+    "sheet": "frlg_pokemon_sheet.png",
+    "front": { "sx": 512, "sy": 640, "sw": 64, "sh": 64 },
+    "back":  { "sx": 512, "sy": 704, "sw": 64, "sh": 64 }
+  },
+  "Dark Blastoise": {
+    "pokemon": "Blastoise",
+    "dex_number": 9,
+    "sheet": "frlg_pokemon_sheet.png",
+    "front": { "sx": 512, "sy": 0, "sw": 64, "sh": 64 },
+    "back":  { "sx": 512, "sy": 64, "sw": 64, "sh": 64 }
+  },
+  "Dark Charizard": {
+    "pokemon": "Charizard",
+    "dex_number": 6,
+    "sheet": "frlg_pokemon_sheet.png",
+    "front": { "sx": 320, "sy": 0, "sw": 64, "sh": 64 },
+    "back":  { "sx": 320, "sy": 64, "sw": 64, "sh": 64 }
+  }
+}
