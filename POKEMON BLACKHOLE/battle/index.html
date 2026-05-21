@@ -333,6 +333,9 @@
   #foe-stat-box .stat-name,
   #foe-stat-box .stat-grader,
   #foe-stat-box .stat-appreciation { overflow: hidden; text-overflow: clip; }
+  /* Player stat box mirrors the foe box diagonally — anchored bottom-LEFT,
+     left-aligned, overhanging the arena's bottom-left edge by the same 40px
+     the foe box overhangs the top-right edge. */
   #player-stat-wrap {
     display: flex;
     justify-content: flex-start;
@@ -362,59 +365,13 @@
     letter-spacing: 0.5px;
   }
   #player-stat-box .grade-row .stat-grader-label { font-size: 7px; flex: 1; min-width: 0; overflow: hidden; }
-  /* Edit-mode controls — inline selects + numeric inputs */
-  #player-stat-box .inline-select {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 7px;
-    color: #1a1a26;
-    background: #ffffff;
-    border: 1px solid #c8a820;
-    border-radius: 2px;
-    padding: 1px 4px;
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-  }
-  #player-stat-box .inline-select:hover { filter: brightness(1.05); }
-  #player-stat-box .stat-level-select  { font-size: 8px; min-width: 50px; }
-  #player-stat-box .stat-grader-select { min-width: 44px; font-size: 7px; }
-  #player-stat-box .stat-label-select  { font-size: 7px; min-width: 80px; flex: 1; }
-  #player-stat-box .inline-price {
-    width: 50px;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 7px;
-    color: #1a1a26;
-    background: #ffffff;
-    border: 1px solid #c8a820;
-    border-radius: 2px;
-    padding: 1px 2px;
-    text-align: right;
-    -moz-appearance: textfield;
-  }
-  #player-stat-box .pop-input { width: 36px; text-align: center; }
-  #player-stat-box .inline-price::-webkit-outer-spin-button,
-  #player-stat-box .inline-price::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  /* Edit/Display mode toggle — class on #player-stat-box flips which spans are shown */
-  #player-stat-box .display-only { display: none; }
-  #player-stat-box.display-mode .edit-only { display: none !important; }
-  #player-stat-box.display-mode .display-only { display: inline; }
-  #player-stat-box.display-mode { cursor: pointer; }
-  #player-stat-box.display-mode:hover { box-shadow: 2px 2px 0 rgba(0,0,0,0.55), 0 0 0 2px rgba(200,168,32,0.5); }
-  /* CONFIRM button — only in edit mode */
-  #player-confirm-btn {
-    display: block;
-    margin: 8px auto 2px;
-    background: #c8a820;
-    color: #1a1a26;
-    border: 2px solid #1a1a26;
-    border-radius: 3px;
-    padding: 6px 14px;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
-    cursor: pointer;
-    letter-spacing: 1px;
-  }
-  #player-confirm-btn:hover { filter: brightness(1.1); }
+  /* Rarity symbol pinned to the top-right corner, right of the 1st Ed stamp */
+  #player-stat-box .name-row-icons { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+  #player-stat-box .stat-rarity-sym { font-size: 12px; line-height: 1; }
+  #player-stat-box .stat-rarity-sym.ultra    { color: #d4af37; text-shadow: 0 0 2px rgba(212,175,55,0.55); }
+  #player-stat-box .stat-rarity-sym.rare     { color: #b06820; }
+  #player-stat-box .stat-rarity-sym.uncommon { color: #4480cc; }
+  #player-stat-box .stat-rarity-sym.common   { color: #707088; }
   /* Rarity row inner spans (mirror foe .stat-rarity) */
   #player-rarity .pop-text { color: #707088; margin-left: 4px; }
   .stat-box.visible { opacity: 1; transform: translateX(0); }
@@ -1053,56 +1010,44 @@
     <img id="trainer-logo" src="../assets/sprites/fletchketchem_logo.png" alt="FletchKetchem">
   </div>
 
-  <!-- Cert + eBay buttons sit DIRECTLY below the battle screen, right-aligned -->
-  <div id="cert-bar"></div>
-
-  <!-- Player stat box: bottom-LEFT, overlaps arena bottom edge per user spec -->
+  <!-- Player stat plate: sits directly below the arena so its top edge overhangs
+       the arena's bottom-left by the same ~22px the foe plate overhangs the top. -->
   <div id="player-stat-wrap">
-    <div id="player-stat-box" class="stat-box edit-mode">
-      <!-- Row 1: card name + 1st Ed stamp (mirror of foe name-row) -->
+    <div id="player-stat-box" class="stat-box">
+      <!-- Row 1: card name + (1st Ed stamp) + rarity symbol in top-right corner -->
       <div class="stat-row name-row">
         <span class="stat-name" id="player-card-name">DARK KADABRA</span>
-        <canvas class="first-ed-stamp" id="player-first-ed" width="28" height="28"></canvas>
+        <span class="name-row-icons">
+          <canvas class="first-ed-stamp" id="player-first-ed" width="28" height="28"></canvas>
+          <span class="stat-rarity-sym sym" id="player-rarity-sym">&#9733;</span>
+        </span>
       </div>
-      <!-- Row 2: Lv badge | grader badge | grader code | label (selects edit / spans display) -->
+      <!-- Row 2: black Lv pill | grader badge | label text (display only) -->
       <div class="stat-row grade-row">
-        <select class="edit-only inline-select stat-level-select" id="player-level-sel">
-          <option>Lv10</option><option selected>Lv9.5</option><option>Lv9</option><option>Lv8</option><option>Lv7</option><option>Lv6</option>
-        </select>
-        <span class="display-only stat-level" id="player-level-display">Lv9.5</span>
+        <span class="stat-level" id="player-level-display">Lv9.5</span>
         <canvas class="grader-badge-px" id="player-grader-badge" width="36" height="14"></canvas>
-        <select class="edit-only inline-select stat-grader-select" id="player-grader-sel">
-          <option>PSA</option><option selected>CGC</option><option>BGS</option><option>SGC</option><option>TAG</option>
-        </select>
-        <select class="edit-only inline-select stat-label-select" id="player-label-sel">
-          <option>BLUE LABEL</option><option selected>GEM MINT</option><option>PRISTINE</option><option>GOLD LABEL</option><option>BLACK LABEL</option><option>MINT</option><option>MINT+</option><option>PERFECT</option>
-        </select>
-        <span class="display-only stat-grader-label" id="player-label-display">GEM MINT</span>
+        <span class="stat-grader-label" id="player-label-display">BLUE LABEL</span>
       </div>
       <!-- HP bar -->
       <div class="hp-label">HP <span class="hp-line"></span></div>
       <div class="hp-bar-container"><div class="hp-bar-fill player-hp" id="player-hp-fill"></div></div>
-      <!-- Listed / market price (inputs in edit, span in display) -->
-      <div class="hp-numbers" id="player-hp-numbers">
-        <span class="edit-only">$<input type="number" id="player-listed" value="64.99" step="0.01" min="0" class="inline-price"> / $<input type="number" id="player-market" value="55" step="0.01" min="0" class="inline-price"></span>
-        <span class="display-only" id="player-prices-display">$64.99 / $55</span>
-      </div>
-      <!-- Rarity row: stable spans (no innerHTML rebuild) + PSA POP -->
+      <!-- Listed / market price (plain text) -->
+      <div class="hp-numbers" id="player-prices-display">$64.99 / $55</div>
+      <!-- Rarity label + PSA POP (symbol lives in the corner above) -->
       <div class="stat-rarity" id="player-rarity">
-        <span class="sym" id="player-rarity-sym">&#9733;</span>
         <span class="rarity-label" id="player-rarity-label">RARE</span>
         <span class="rarity-sep">&mdash;</span>
         <span class="pop-text">PSA POP </span>
-        <span class="display-only" id="player-pop-display">23</span>
-        <input class="edit-only inline-price pop-input" type="number" id="player-pop" value="23" step="1" min="0">
+        <span id="player-pop-display">23</span>
       </div>
       <canvas id="player-pokeballs" class="pokeball-inline" width="104" height="14"></canvas>
       <div class="exp-label">Exp (Comp) <span id="comps-readout" style="color:#909090;font-size:6px;float:right;">820 / 1000</span></div>
       <div class="exp-bar-container"><div class="exp-bar-fill" id="exp-fill"></div></div>
-      <!-- CONFIRM button — visible in edit mode only -->
-      <button id="player-confirm-btn" class="edit-only" type="button">CONFIRM</button>
     </div>
   </div>
+
+  <!-- Cert + eBay buttons, right-aligned, below the player plate -->
+  <div id="cert-bar"></div>
 
   <div id="dialog-section">
     <div id="dialog-text"><span id="dialog-typed"></span><span class="arrow">&#9660;</span></div>
@@ -1225,55 +1170,55 @@ const CARD_DATA = {
 const ASSET = {
   sprites: {
     // _v8 = cache-bust round 7 (same coords as v4, fresh filenames)
-    persian_front:   "../assets/sprites/v11/persian_front.png",
-    persian_back:    "../assets/sprites/v11/persian_back.png",
-    charizard_front: "../assets/sprites/v11/charizard_front.png",
-    charizard_back:  "../assets/sprites/v11/charizard_back.png",
-    blastoise_front: "../assets/sprites/v11/blastoise_front.png",
-    blastoise_back:  "../assets/sprites/v11/blastoise_back.png",
-    pikachu_front:   "../assets/sprites/v11/pikachu_front.png",
-    pikachu_back:    "../assets/sprites/v11/pikachu_back.png",
-    kadabra_front:   "../assets/sprites/v11/kadabra_front.png",
-    kadabra_back:    "../assets/sprites/v11/kadabra_back.png",
-    gastly_front:    "../assets/sprites/v11/gastly_front.png",
-    gastly_back:     "../assets/sprites/v11/gastly_back.png",
-    magneton_front:  "../assets/sprites/v11/magneton_front.png",
-    magneton_back:   "../assets/sprites/v11/magneton_back.png",
-    magikarp_front:  "../assets/sprites/v11/magikarp_front.png",
-    magikarp_back:   "../assets/sprites/v11/magikarp_back.png",
-    dragonair_front: "../assets/sprites/v11/dragonair_front.png",
-    dragonair_back:  "../assets/sprites/v11/dragonair_back.png",
-    mewtwo_front:    "../assets/sprites/v11/mewtwo_front.png",
-    mewtwo_back:     "../assets/sprites/v11/mewtwo_back.png",
-    raticate_front:  "../assets/sprites/v11/raticate_front.png",
-    raticate_back:   "../assets/sprites/v11/raticate_back.png",
-    mankey_front:    "../assets/sprites/v11/mankey_front.png",
-    mankey_back:     "../assets/sprites/v11/mankey_back.png",
-    dugtrio_front:   "../assets/sprites/v11/dugtrio_front.png",
-    dugtrio_back:    "../assets/sprites/v11/dugtrio_back.png",
-    hypno_front:     "../assets/sprites/v11/hypno_front.png",
-    hypno_back:      "../assets/sprites/v11/hypno_back.png",
-    slowbro_front:   "../assets/sprites/v11/slowbro_front.png",
-    slowbro_back:    "../assets/sprites/v11/slowbro_back.png",
-    arcanine_front:  "../assets/sprites/v11/arcanine_front.png",
-    arcanine_back:   "../assets/sprites/v11/arcanine_back.png",
-    golbat_front:    "../assets/sprites/v11/golbat_front.png",
-    golbat_back:     "../assets/sprites/v11/golbat_back.png",
-    alakazam_front:  "../assets/sprites/v11/alakazam_front.png",
-    alakazam_back:   "../assets/sprites/v11/alakazam_back.png",
-    dragonite_front: "../assets/sprites/v11/dragonite_front.png",
-    dragonite_back:  "../assets/sprites/v11/dragonite_back.png",
-    gyarados_front:  "../assets/sprites/v11/gyarados_front.png",
-    gyarados_back:   "../assets/sprites/v11/gyarados_back.png",
-    machamp_front:   "../assets/sprites/v11/machamp_front.png",
-    machamp_back:    "../assets/sprites/v11/machamp_back.png",
-    rival_throw:     "../assets/sprites/v11/rival_throw.png",
-    red_back:        "../assets/sprites/v11/red_back.png",
-    red_front:       "../assets/sprites/v11/red_front.png",
-    brendan_back_1:  "../assets/sprites/v11/brendan_back_1.png",
-    brendan_back_2:  "../assets/sprites/v11/brendan_back_2.png",
-    brendan_back_3:  "../assets/sprites/v11/brendan_back_3.png",
-    brendan_back_4:  "../assets/sprites/v11/brendan_back_4.png"
+    persian_front:   "../assets/sprites/v12/persian_front.png",
+    persian_back:    "../assets/sprites/v12/persian_back.png",
+    charizard_front: "../assets/sprites/v12/charizard_front.png",
+    charizard_back:  "../assets/sprites/v12/charizard_back.png",
+    blastoise_front: "../assets/sprites/v12/blastoise_front.png",
+    blastoise_back:  "../assets/sprites/v12/blastoise_back.png",
+    pikachu_front:   "../assets/sprites/v12/pikachu_front.png",
+    pikachu_back:    "../assets/sprites/v12/pikachu_back.png",
+    kadabra_front:   "../assets/sprites/v12/kadabra_front.png",
+    kadabra_back:    "../assets/sprites/v12/kadabra_back.png",
+    gastly_front:    "../assets/sprites/v12/gastly_front.png",
+    gastly_back:     "../assets/sprites/v12/gastly_back.png",
+    magneton_front:  "../assets/sprites/v12/magneton_front.png",
+    magneton_back:   "../assets/sprites/v12/magneton_back.png",
+    magikarp_front:  "../assets/sprites/v12/magikarp_front.png",
+    magikarp_back:   "../assets/sprites/v12/magikarp_back.png",
+    dragonair_front: "../assets/sprites/v12/dragonair_front.png",
+    dragonair_back:  "../assets/sprites/v12/dragonair_back.png",
+    mewtwo_front:    "../assets/sprites/v12/mewtwo_front.png",
+    mewtwo_back:     "../assets/sprites/v12/mewtwo_back.png",
+    raticate_front:  "../assets/sprites/v12/raticate_front.png",
+    raticate_back:   "../assets/sprites/v12/raticate_back.png",
+    mankey_front:    "../assets/sprites/v12/mankey_front.png",
+    mankey_back:     "../assets/sprites/v12/mankey_back.png",
+    dugtrio_front:   "../assets/sprites/v12/dugtrio_front.png",
+    dugtrio_back:    "../assets/sprites/v12/dugtrio_back.png",
+    hypno_front:     "../assets/sprites/v12/hypno_front.png",
+    hypno_back:      "../assets/sprites/v12/hypno_back.png",
+    slowbro_front:   "../assets/sprites/v12/slowbro_front.png",
+    slowbro_back:    "../assets/sprites/v12/slowbro_back.png",
+    arcanine_front:  "../assets/sprites/v12/arcanine_front.png",
+    arcanine_back:   "../assets/sprites/v12/arcanine_back.png",
+    golbat_front:    "../assets/sprites/v12/golbat_front.png",
+    golbat_back:     "../assets/sprites/v12/golbat_back.png",
+    alakazam_front:  "../assets/sprites/v12/alakazam_front.png",
+    alakazam_back:   "../assets/sprites/v12/alakazam_back.png",
+    dragonite_front: "../assets/sprites/v12/dragonite_front.png",
+    dragonite_back:  "../assets/sprites/v12/dragonite_back.png",
+    gyarados_front:  "../assets/sprites/v12/gyarados_front.png",
+    gyarados_back:   "../assets/sprites/v12/gyarados_back.png",
+    machamp_front:   "../assets/sprites/v12/machamp_front.png",
+    machamp_back:    "../assets/sprites/v12/machamp_back.png",
+    rival_throw:     "../assets/sprites/v12/rival_throw.png",
+    red_back:        "../assets/sprites/v12/red_back.png",
+    red_front:       "../assets/sprites/v12/red_front.png",
+    brendan_back_1:  "../assets/sprites/v12/brendan_back_1.png",
+    brendan_back_2:  "../assets/sprites/v12/brendan_back_2.png",
+    brendan_back_3:  "../assets/sprites/v12/brendan_back_3.png",
+    brendan_back_4:  "../assets/sprites/v12/brendan_back_4.png"
   },
   audio: {
     trainer_battle:      "../Music-Sound/1-11. Battle! (Trainer).mp3",
@@ -2397,12 +2342,10 @@ function recomputeNet() {
 }
 
 /* =========================================================================
-   Player stat box — editable mirror of foe. Hydrates from PLAYER_CARDS pool,
-   live-updates HP/badges/pokeballs/rarity on every field change. CONFIRM →
-   display mode; click display → back to edit. The rarity row uses stable
-   spans (#player-rarity-sym, #player-rarity-label) and is mutated via
-   textContent only — never innerHTML — so syncPlayerDisplayValues can't
-   target a stripped DOM node.
+   Player stat box — display-only mirror of foe. Picks one card from the
+   PLAYER_CARDS pool (only those whose back sprite actually loaded) and renders
+   name, Lv pill, grader badge, label, HP, prices, pop, rarity, and the back
+   sprite on the left platform. No edit controls.
    ========================================================================= */
 function pokeballsForGrade(gradeStr) {
   const g = parseFloat(String(gradeStr).replace(/[^\d.]/g, '')) || 0;
@@ -2415,75 +2358,49 @@ function pokeballsForGrade(gradeStr) {
 }
 
 function setupPlayerEditor() {
-  if (PLAYER_CARDS && PLAYER_CARDS.length) {
-    const pc = PLAYER_CARDS[Math.floor(Math.random() * PLAYER_CARDS.length)];
-    $('player-card-name').textContent = pc.card_name.toUpperCase();
-    $('player-level-sel').value       = 'Lv' + pc.grade;
-    $('player-grader-sel').value      = pc.grader;
-    $('player-label-sel').value       = pc.grade_label;
-    $('player-listed').value          = pc.listed_price;
-    $('player-market').value          = pc.market_avg;
-    $('player-pop').value             = pc.pop_grader;
-    draw1stEditionStamp($('player-first-ed'), pc.edition);
-    const coords = POKEMON_COORDS[pc.sprite];
-    if (coords) drawSprite($('player-pokemon'), coords.back.sheet, coords.back, 3, true);
-  }
-  const ids = ['player-level-sel','player-grader-sel','player-label-sel',
-               'player-listed','player-market','player-pop'];
-  ids.forEach(id => {
-    const el = $(id); if (!el) return;
-    const evt = (el.tagName === 'INPUT') ? 'input' : 'change';
-    el.addEventListener(evt, applyPlayerChanges);
+  if (!(PLAYER_CARDS && PLAYER_CARDS.length)) return;
+  // Only pick cards whose back sprite actually loaded — otherwise the player
+  // platform shows an empty shadow with no Pokemon.
+  const renderable = PLAYER_CARDS.filter(pc => {
+    const c = POKEMON_COORDS[pc.sprite];
+    return c && IMG[c.back.sheet];
   });
-  $('player-confirm-btn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    applyPlayerChanges();
-    syncPlayerDisplayValues();
-    $('player-stat-box').classList.remove('edit-mode');
-    $('player-stat-box').classList.add('display-mode');
-  });
-  $('player-stat-box').addEventListener('click', () => {
-    const box = $('player-stat-box');
-    if (!box.classList.contains('display-mode')) return;
-    box.classList.remove('display-mode');
-    box.classList.add('edit-mode');
-  });
-  applyPlayerChanges();
-  syncPlayerDisplayValues();
-}
+  const pool = renderable.length ? renderable : PLAYER_CARDS;
+  const pc = pool[Math.floor(Math.random() * pool.length)];
 
-function applyPlayerChanges() {
-  const grader = $('player-grader-sel').value;
-  const lvText = $('player-level-sel').value;
-  const grade  = parseFloat(lvText.replace(/[^\d.]/g, '')) || 0;
-  const label  = $('player-label-sel').value;
-  const listed = parseFloat($('player-listed').value) || 0;
-  const market = parseFloat($('player-market').value) || 0;
-  const pop    = parseInt($('player-pop').value, 10)   || 0;
+  const grade = parseFloat(String(pc.grade).replace(/[^\d.]/g, '')) || 0;
 
-  drawGraderBadgePx($('player-grader-badge'), grader);
+  $('player-card-name').textContent     = pc.card_name.toUpperCase();
+  $('player-level-display').textContent = 'Lv' + pc.grade;
+  $('player-label-display').textContent = pc.grade_label;
+  $('player-prices-display').textContent = `$${pc.listed_price} / $${pc.market_avg}`;
+  $('player-pop-display').textContent    = pc.pop_grader;
 
-  const hpPct = market > 0 ? Math.max(0, Math.min(100, Math.round((listed / market) * 100))) : 0;
+  draw1stEditionStamp($('player-first-ed'), pc.edition);
+  drawGraderBadgePx($('player-grader-badge'), pc.grader);
+
+  const hpPct = pc.market_avg > 0
+    ? Math.max(0, Math.min(100, Math.round((pc.listed_price / pc.market_avg) * 100)))
+    : 0;
   const fill = $('player-hp-fill');
   fill.style.background = getHpColor(hpPct);
   fill.style.width      = hpPct + '%';
   fill.classList.toggle('critical', hpPct < 20);
 
-  drawPokeballRow($('player-pokeballs'), pokeballsForGrade(lvText), 6);
+  drawPokeballRow($('player-pokeballs'), pokeballsForGrade('Lv' + pc.grade), 6);
 
-  // Mutate stable spans — DO NOT touch #player-rarity innerHTML
-  const tier = getRarityTier(grader, grade, label, pop);
+  // Rarity tier — symbol pinned in the corner, label/pop in the row below
+  const tier = getRarityTier(pc.grader, grade, pc.grade_label, pc.pop_grader);
   const sym  = $('player-rarity-sym');
   sym.textContent = tier.sym;
-  sym.className   = 'sym ' + tier.cls;
+  sym.className   = 'sym stat-rarity-sym ' + tier.cls;
   $('player-rarity-label').textContent = tier.label;
-}
 
-function syncPlayerDisplayValues() {
-  $('player-level-display').textContent  = $('player-level-sel').value;
-  $('player-label-display').textContent  = $('player-label-sel').value;
-  $('player-prices-display').textContent = `$${$('player-listed').value} / $${$('player-market').value}`;
-  $('player-pop-display').textContent    = $('player-pop').value;
+  // Player Pokemon — back sprite on the left platform
+  const coords = POKEMON_COORDS[pc.sprite];
+  if (coords && IMG[coords.back.sheet]) {
+    drawSprite($('player-pokemon'), coords.back.sheet, coords.back, 3, false);
+  }
 }
 
 /* =========================================================================
