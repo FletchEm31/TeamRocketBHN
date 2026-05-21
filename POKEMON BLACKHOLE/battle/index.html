@@ -119,6 +119,29 @@
   .rl-pop  { font-size: 7px; color: #909090; }
   .rl-note { font-size: 7px; color: #909090; margin-top: 8px; padding-top: 5px; border-top: 1px solid #333; }
 
+  /* How-to-read legend — LEFT-side panel (mirrors the right legends) */
+  #legend-panel {
+    position: fixed;
+    top: 60px; left: 12px;
+    width: 240px;
+    z-index: 1000;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid #2a3a5a;
+    border-radius: 4px;
+    padding: 10px;
+    color: #fff;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    line-height: 1.6;
+    letter-spacing: 0.5px;
+  }
+  .lg-title { color: #c8a820; margin-bottom: 8px; font-size: 9px; letter-spacing: 1px; }
+  .lg-sec { margin-bottom: 8px; padding-bottom: 7px; border-bottom: 1px solid #2a2a38; }
+  .lg-sec:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .lg-h { color: #6cb4ff; font-size: 8px; margin-bottom: 4px; letter-spacing: 0.5px; }
+  .lg-d { color: #c8c8d8; font-size: 7px; line-height: 1.8; }
+  .lg-d b { color: #ffffff; }
+
   /* Pricing confidence legend — right-side panel below rarity */
   #confidence-legend {
     position: fixed;
@@ -236,7 +259,7 @@
     height: 192px;
     transition: transform 1.2s ease-in-out, opacity 0.4s ease-out;
   }
-  .combatant.trainer { width: 80px; height: 96px; }  /* trainers shrunk per spec ~72-80x82-96 */
+  .combatant.trainer { width: 130px; height: 150px; }  /* enlarged so trainers read clearly during walk-in */
   .pokeball-inline {
     display: block;
     width: 104px;
@@ -259,9 +282,9 @@
     font-size: 5px;
     letter-spacing: 0.3px;
   }
-  /* Trainers smaller — feet anchored at platform level */
-  #foe-trainer  { top: 130px; right: 75px; transform: translateX(280%); }
-  #player-trainer { bottom: 30px; left: 75px; transform: translateX(-280%); }
+  /* Trainers — feet anchored near platform level (canvas enlarged to 130x150) */
+  #foe-trainer  { top: 78px; right: 60px; transform: translateX(280%); }
+  #player-trainer { bottom: 14px; left: 60px; transform: translateX(-280%); }
   /* Pokemon hidden until materialize */
   #foe-pokemon, #player-pokemon { opacity: 0; }
   #foe-pokemon    { top: 40px; right: 30px; }
@@ -339,8 +362,8 @@
   #player-stat-wrap {
     display: flex;
     justify-content: flex-start;
-    padding: 4px 6px 0;
-    margin-top: -22px;    /* overlap arena bottom edge per spec */
+    flex: 0 0 auto;
+    margin-top: -22px;    /* overlap arena bottom-left edge per spec */
     position: relative;
     z-index: 25;
   }
@@ -365,13 +388,22 @@
     letter-spacing: 0.5px;
   }
   #player-stat-box .grade-row .stat-grader-label { font-size: 7px; flex: 1; min-width: 0; overflow: hidden; }
-  /* Rarity symbol pinned to the top-right corner, right of the 1st Ed stamp */
-  #player-stat-box .name-row-icons { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
-  #player-stat-box .stat-rarity-sym { font-size: 12px; line-height: 1; }
-  #player-stat-box .stat-rarity-sym.ultra    { color: #d4af37; text-shadow: 0 0 2px rgba(212,175,55,0.55); }
-  #player-stat-box .stat-rarity-sym.rare     { color: #b06820; }
-  #player-stat-box .stat-rarity-sym.uncommon { color: #4480cc; }
-  #player-stat-box .stat-rarity-sym.common   { color: #707088; }
+  /* Rarity symbol pinned to the top-right corner, right of the 1st Ed stamp — both boxes */
+  #player-stat-box .name-row-icons,
+  #foe-stat-box .name-row-icons { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+  #player-stat-box .stat-rarity-sym,
+  #foe-stat-box .stat-rarity-sym { font-size: 12px; line-height: 1; }
+  #player-stat-box .stat-rarity-sym.ultra,
+  #foe-stat-box .stat-rarity-sym.ultra       { color: #d4af37; text-shadow: 0 0 2px rgba(212,175,55,0.55); }
+  #player-stat-box .stat-rarity-sym.rare,
+  #foe-stat-box .stat-rarity-sym.rare        { color: #b06820; }
+  #player-stat-box .stat-rarity-sym.uncommon,
+  #foe-stat-box .stat-rarity-sym.uncommon    { color: #4480cc; }
+  #player-stat-box .stat-rarity-sym.common,
+  #foe-stat-box .stat-rarity-sym.common      { color: #707088; }
+  /* CGC Blue Label slabs: tint the Lv pill blue (grade name shown as GEM MINT) */
+  #foe-stat-box .grade-row .stat-level.lv-blue,
+  #player-stat-box .grade-row .stat-level.lv-blue { background: #0044cc; border-color: #0044cc; }
   /* Rarity row inner spans (mirror foe .stat-rarity) */
   #player-rarity .pop-text { color: #707088; margin-left: 4px; }
   .stat-box.visible { opacity: 1; transform: translateX(0); }
@@ -696,8 +728,8 @@
   .vs-label.foe-class    { color: #0044cc; text-shadow: 0 0 4px rgba(64,128,255,0.4); }
   .vs-label.player-class { color: #0044cc; }
   .vs-portrait {
-    width: 96px; height: 96px;
-    margin: 12px auto;
+    width: 150px; height: 168px;
+    margin: 10px auto;
     background: transparent;
     border: none;
     display: block;
@@ -774,15 +806,24 @@
 
   #action-buttons.locked { pointer-events: none; opacity: 0.55; }
 
-  /* Cert lookup + eBay listing button bar — directly under arena, right-aligned.
-     margin-right:0 so eBay button's right edge sits at the same x as the arena's
-     right edge (both bounded by #app inner padding). */
+  /* Row directly below the arena: player plate (left, overhangs) + cert buttons
+     (right, top-aligned so they sit directly under the battle screen). */
+  #below-arena {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 4px 6px 0;
+  }
+  /* Cert lookup + eBay listing button bar — top-right of the below-arena row,
+     i.e. directly under the battle screen. */
   #cert-bar {
     display: flex;
     gap: 8px;
     justify-content: flex-end;
     flex-wrap: wrap;
-    margin: 8px 0 0 0;
+    flex: 0 1 auto;
+    margin: 4px 0 0 0;
   }
   .cert-btn {
     font-family: 'Press Start 2P', monospace;
@@ -940,6 +981,27 @@
 <!-- Tier badge lifted out of the dialog box, lives in the top bar next to START -->
 <div id="tier-badge-top"></div>
 
+<!-- Left-side "how to read" legend -->
+<div id="legend-panel">
+  <div class="lg-title">HOW TO READ</div>
+  <div class="lg-sec">
+    <div class="lg-h">EXP (COMP) BAR</div>
+    <div class="lg-d">Number of recent comparable sales (&ldquo;comps&rdquo;) we pulled to compute the prices &amp; HP shown. Fuller bar = more comps = higher confidence.</div>
+  </div>
+  <div class="lg-sec">
+    <div class="lg-h">BADGES</div>
+    <div class="lg-d"><b>Lv</b> = grade (blue pill = CGC Blue Label). <b>PSA/CGC/BGS/SGC/TAG</b> badge = grader. <b>1ST</b> stamp = 1st Edition. <b>&#9733;</b> = rarity tier (see right panel).</div>
+  </div>
+  <div class="lg-sec">
+    <div class="lg-h">HP BAR</div>
+    <div class="lg-d">Listed price as a % of market value. Greener &amp; fuller = better deal; red = distressed/steal.</div>
+  </div>
+  <div class="lg-sec">
+    <div class="lg-h">ACTIONS</div>
+    <div class="lg-d"><b>BUY IT / CATCH IT</b> &mdash; open the listing to buy. <b>OFFER</b> &mdash; send an offer. <b>WATCH</b> &mdash; track it. <b>ANALYZE</b> &mdash; open in Claude. <b>RUN</b> &mdash; dismiss.</div>
+  </div>
+</div>
+
 <!-- Right-side reference panels (rarity tiers + pricing confidence) -->
 <div id="rarity-legend">
   <div class="rl-title">RARITY TIERS</div>
@@ -975,7 +1037,10 @@
     <div id="foe-stat-box" class="stat-box">
       <div class="stat-row name-row">
         <span class="stat-name">DARK PERSIAN</span>
-        <canvas class="first-ed-stamp" id="foe-first-ed" width="28" height="28"></canvas>
+        <span class="name-row-icons">
+          <canvas class="first-ed-stamp" id="foe-first-ed" width="28" height="28"></canvas>
+          <span class="stat-rarity-sym sym" id="foe-rarity-sym">&#9733;</span>
+        </span>
       </div>
       <div class="stat-row grade-row">
         <span class="stat-level">Lv9.5</span>
@@ -1000,9 +1065,9 @@
       <div class="bg-platform player"></div>
     </div>
 
-    <canvas id="foe-trainer"    class="combatant trainer foe"    width="80" height="96"></canvas>
+    <canvas id="foe-trainer"    class="combatant trainer foe"    width="130" height="150"></canvas>
     <canvas id="foe-pokemon"    class="combatant foe pokemon"    width="192" height="192"></canvas>
-    <canvas id="player-trainer" class="combatant trainer player" width="80" height="96"></canvas>
+    <canvas id="player-trainer" class="combatant trainer player" width="130" height="150"></canvas>
     <canvas id="player-pokemon" class="combatant player pokemon" width="192" height="192"></canvas>
 
     <div id="pokeball-fly"></div>
@@ -1010,8 +1075,11 @@
     <img id="trainer-logo" src="../assets/sprites/fletchketchem_logo.png" alt="FletchKetchem">
   </div>
 
-  <!-- Player stat plate: sits directly below the arena so its top edge overhangs
-       the arena's bottom-left by the same ~22px the foe plate overhangs the top. -->
+  <!-- Below-arena row: player plate on the left (overhangs the arena's bottom-left
+       edge) and the cert/eBay buttons on the right (sitting directly below the
+       battle screen, top-aligned). -->
+  <div id="below-arena">
+  <!-- Player stat plate: top edge overhangs the arena's bottom-left ~22px. -->
   <div id="player-stat-wrap">
     <div id="player-stat-box" class="stat-box">
       <!-- Row 1: card name + (1st Ed stamp) + rarity symbol in top-right corner -->
@@ -1046,8 +1114,9 @@
     </div>
   </div>
 
-  <!-- Cert + eBay buttons, right-aligned, below the player plate -->
+  <!-- Cert + eBay buttons, right-aligned, directly below the battle screen -->
   <div id="cert-bar"></div>
+  </div><!-- /below-arena -->
 
   <div id="dialog-section">
     <div id="dialog-text"><span id="dialog-typed"></span><span class="arrow">&#9660;</span></div>
@@ -1103,14 +1172,14 @@
         <canvas class="vs-grader-badge" id="vs-foe-grader-badge" width="36" height="14"></canvas>
         <div class="vs-label foe-class" id="vs-foe-class">TRAINER</div>
       </div>
-      <canvas class="vs-portrait" id="vs-foe-portrait" width="96" height="96"></canvas>
+      <canvas class="vs-portrait" id="vs-foe-portrait" width="150" height="168"></canvas>
       <div class="vs-name" id="vs-foe-name">adpow-7283</div>
       <div class="vs-sub" id="vs-foe-sub">eBay Seller<br>3,241 feedback (99.8%)</div>
     </div>
     <div class="vs-big">VS</div>
     <div>
       <div class="vs-label player-class">COLLECTOR</div>
-      <canvas class="vs-portrait" id="vs-player-portrait" width="96" height="96"></canvas>
+      <canvas class="vs-portrait" id="vs-player-portrait" width="150" height="168"></canvas>
       <div class="vs-name">@fletchketchem</div>
       <div class="vs-sub">Team Rocket BHN<br>Lv99 Trader</div>
     </div>
@@ -1694,6 +1763,11 @@ function getRarityTier(grader, grade, label, pop) {
   }
 }
 
+/* CGC Blue Label slabs are graded Gem Mint — show the grade name, not the
+   holder color, and tint the Lv pill blue. */
+function isBlueLabel(label) { return /blue\s*label/i.test(label || ''); }
+function displayGradeLabel(label) { return isBlueLabel(label) ? 'GEM MINT' : label; }
+
 function renderRarityLine(targetId, card) {
   const popField = `pop_psa_${String(card.grade).replace('.', '')}`;
   const pop = card[popField];
@@ -1706,6 +1780,9 @@ function renderRarityLine(targetId, card) {
     `<span class="sym ${tier.cls}">${tier.sym}</span>` +
     `<span class="rarity-label">${tier.label}</span>` +
     `<span class="rarity-sep">—</span>PSA POP ${pop}`;
+  // Mirror the symbol into the nameplate corner (foe + player both use {id}-sym)
+  const symEl = document.getElementById(targetId + '-sym');
+  if (symEl) { symEl.textContent = tier.sym; symEl.className = 'sym stat-rarity-sym ' + tier.cls; }
 }
 
 /* ============ Grader -> trainer class metadata ============ */
@@ -1926,8 +2003,8 @@ async function showVsScreen() {
   $('vs-foe-name').textContent = CARD_DATA.seller_username;
   $('vs-foe-sub').innerHTML = `${CARD_DATA.seller_platform} Seller<br>${CARD_DATA.seller_feedback.toLocaleString()} feedback (99.8%)`;
 
-  drawSprite($('vs-foe-portrait'), TRAINER_COORDS.rival_throw.sheet, TRAINER_COORDS.rival_throw, 1.5, false);
-  drawSprite($('vs-player-portrait'), PLAYER_COORDS.red_front_vs.sheet, PLAYER_COORDS.red_front_vs, 1.2, false);
+  drawSprite($('vs-foe-portrait'), TRAINER_COORDS.rival_throw.sheet, TRAINER_COORDS.rival_throw, 2.3, false);
+  drawSprite($('vs-player-portrait'), PLAYER_COORDS.red_front_vs.sheet, PLAYER_COORDS.red_front_vs, 1.95, false);
   drawGraderBadgePx($('vs-foe-grader-badge'), CARD_DATA.grader);
 
   $('vs-overlay').classList.add('visible');
@@ -1972,7 +2049,7 @@ function animateTrainerThrow(canvasId, frames) {
   const interval = setInterval(() => {
     if (i >= frames.length) { clearInterval(interval); return; }
     const f = frames[i++];
-    drawSprite(canvas, f.sheet, f, 1.3, false);
+    drawSprite(canvas, f.sheet, f, 2.0, false);
   }, 110);
   return interval;
 }
@@ -2372,7 +2449,8 @@ function setupPlayerEditor() {
 
   $('player-card-name').textContent     = pc.card_name.toUpperCase();
   $('player-level-display').textContent = 'Lv' + pc.grade;
-  $('player-label-display').textContent = pc.grade_label;
+  $('player-level-display').classList.toggle('lv-blue', isBlueLabel(pc.grade_label));
+  $('player-label-display').textContent = displayGradeLabel(pc.grade_label);
   $('player-prices-display').textContent = `$${pc.listed_price} / $${pc.market_avg}`;
   $('player-pop-display').textContent    = pc.pop_grader;
 
@@ -2492,8 +2570,10 @@ async function init() {
   });
   // Update nameplate text driven by the pick
   document.querySelector('#foe-stat-box .stat-name').textContent = pick.name.toUpperCase();
-  document.querySelector('#foe-stat-box .stat-grader-label').textContent = pick.label;
-  document.querySelector('#foe-stat-box .stat-level').textContent = 'Lv' + pick.grade;
+  document.querySelector('#foe-stat-box .stat-grader-label').textContent = displayGradeLabel(pick.label);
+  const foeLv = document.querySelector('#foe-stat-box .stat-level');
+  foeLv.textContent = 'Lv' + pick.grade;
+  foeLv.classList.toggle('lv-blue', isBlueLabel(pick.label));
   $('foe-hp-numbers').textContent = `$${pick.listed} / $${pick.market}`;
   // cert text removed from stat box per spec — cert lives in the button below only
   // HP bar fill + recompute Net + cascade Listed/Mkt/Spread cells immediately.
@@ -2536,8 +2616,8 @@ async function init() {
   setupPlayerEditor();
 
   // Pre-render trainers at start position (offscreen). Scale 1.3x → ~73x83 sprite within 80x96 canvas.
-  drawSprite($('foe-trainer'), TRAINER_COORDS.rival_throw.sheet, TRAINER_COORDS.rival_throw, 1.3, false);
-  drawSprite($('player-trainer'), PLAYER_COORDS.brendan_idle.sheet, PLAYER_COORDS.brendan_idle, 1.3, false);
+  drawSprite($('foe-trainer'), TRAINER_COORDS.rival_throw.sheet, TRAINER_COORDS.rival_throw, 2.0, false);
+  drawSprite($('player-trainer'), PLAYER_COORDS.brendan_idle.sheet, PLAYER_COORDS.brendan_idle, 2.0, false);
 
   // Pixel-art grader badge on the nameplate
   drawGraderBadgePx($('foe-grader-badge'), CARD_DATA.grader);
