@@ -5,6 +5,47 @@
 > built on top of real Pokemon card market intelligence.  
 > Part of the **Team Rocket BHN — Pokemon Market — Blackhole Network** operation.
 
+
+<p align="center">
+  <img src="docs/media/banner.png" alt="TeamRocketBHN — Pokemon Blackhole" width="820">
+</p>
+
+<p align="center">
+  <img src="docs/media/demo_15s.gif" alt="Pokemon Blackhole demo — alert, VS screen, battle, buy confirmed" width="820">
+</p>
+
+<p align="center">
+  <b><a href="https://raw.githack.com/FletchEm31/TeamRocketBHN/main/POKEMON%20BLACKHOLE/battle/index.html">▶ Try the live demo</a></b>
+  &nbsp;·&nbsp; <a href="docs/media/demo_30s.gif">30-second walkthrough (GIF)</a>
+</p>
+
+---
+
+## See It In Action
+
+### 1 · HORIZON Detected a Target
+Every deal starts the way every rival battle does: a "!" over a black screen. HORIZON scans eBay listings for graded Pokemon cards, checks each against market prices, and when one comes in well below value it triggers the alert and names the seller.
+
+<img src="docs/media/01_alert.png" alt="HORIZON alert screen" width="820">
+
+### 2 · The Matchup: Seller vs. Collector
+The eBay seller becomes your rival trainer. Their grading company sets their trainer class and pre-battle line, so before you see a single number you know who you're dealing with and how the card was graded.
+
+<img src="docs/media/02_vs_screen.png" alt="VS screen — PSA trainer vs collector" width="820">
+
+### 3 · The Battle Screen: Deal Intel at a Glance
+The card becomes the opposing Pokemon: its level is the grade, its badge the grader. The HP bar is the listed price as a % of market value — the emptier it is, the better the deal. The panel below breaks out listed price, market average, spread, fees and net profit, plus population counts and comparison sales. Then you make your move: **BUY IT, OFFER, ANALYZE or RUN**.
+
+<img src="docs/media/03_battle_deal_intel.png" alt="Battle screen with deal intel panel" width="820">
+
+### 4 · Gotta Catch 'Em All: Buy Confirmed
+Hit BUY IT and the Poke Ball flies. The card is pulled in, the ball wobbles, the catch jingle plays, and HORIZON logs the buy with the grade, price vs. market and expected net profit.
+
+<img src="docs/media/04_buy_confirmed.png" alt="Buy confirmed after catching the card" width="820">
+
+### Run it locally
+Clone the repo and open `POKEMON BLACKHOLE/battle/index.html` through any local web server (for example `python3 -m http.server` from the `POKEMON BLACKHOLE` folder, then visit `/battle/index.html`). Audio is off by default — toggle it with the ♪ button.
+
 ---
 
 ## What Is This
