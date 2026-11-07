@@ -19,6 +19,12 @@
   &nbsp;·&nbsp; <a href="docs/media/demo_30s.gif">30-second walkthrough (GIF)</a>
 </p>
 
+
+> [!IMPORTANT]
+> **Not for sale.** Pokemon Blackhole / TeamRocketBHN is a personal portfolio project. It is not a commercial product, it is not for sale or licensing, and no part of it is offered for purchase.
+>
+> This is an unofficial fan project and is not affiliated with, endorsed by, or sponsored by Nintendo, Game Freak, Creatures Inc., or The Pokémon Company. Pokémon and all related names, characters, and assets are trademarks and © of their respective owners.
+
 ---
 
 ## See It In Action
