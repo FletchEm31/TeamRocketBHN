@@ -13,3 +13,7 @@ POKEMON BLACKHOLE/DOCS/_*.xml
 POKEMON BLACKHOLE/assets/sprites/processed/
 POKEMON BLACKHOLE/assets/sprites/v9/
 POKEMON BLACKHOLE/assets/sprites/v10/
+
+# Office temp/lock files
+~$*
+*.tmp
